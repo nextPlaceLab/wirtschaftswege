@@ -15,7 +15,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
 proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
 
 // Layer Styles
-var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'g': '#51ad37'};
+var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
 
 // Read geojson with layers
 var json = (function() {
@@ -43,4 +43,35 @@ wegeLayer.eachLayer(function(feature) {
         weight: 2,
         opacity: 1,
     })
+});
+
+// Turn Layers on and off
+// Function to show layer
+function show() {
+    return {
+        opacity: 1,
+    };
+}
+// Function to hide layer
+function hide() {
+    return {
+        opacity: 0,
+    };
+}
+// Get checkboxes
+var checkboxes = document.querySelectorAll("input[type=checkbox]");
+// Listen for changes
+checkboxes.forEach(function(checkbox) {
+  checkbox.addEventListener('change', function() {
+    wegeLayer.eachLayer(function(feature) {
+        var type = feature['feature']['properties']['WEGKAT'];
+        if (type == checkbox.id) {
+            if (checkbox.checked) {
+                feature.setStyle(show());
+            } else {
+                feature.setStyle(hide());
+            }
+        }
+    })
+  });
 });

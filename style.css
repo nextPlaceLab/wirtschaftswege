@@ -88,3 +88,26 @@ body {
     width: 100%;
     z-index: -1;
 }
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 10px;
+  }
+  ul span {
+    width: 10px;
+    height: 2px;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+li {
+    padding: 3px 0;
+    font-size: 11px;
+}
+
+h6 {
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 10px;
+}
