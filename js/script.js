@@ -32,8 +32,38 @@ var json = (function() {
     return json;
 })();
 
-// Add geojson to map
-var wegeLayer = L.Proj.geoJson(json).addTo(map);
+// Show attributes on click
+// Onclick function
+function onclick(feature, layer) {
+    layer.on({
+        click: attributes
+    });
+}
+// Add atributes function
+function attributes(e) {
+    //First reset style of all features
+    wegeLayer.eachLayer(function(feature) {
+        feature.setStyle({
+            weight: 2,
+        })
+    });
+    // Then highlight clicked feature
+    feature = e.target;
+    feature.setStyle({
+        weight: 5,
+    });
+    // Then fill attribute table
+    var entries = document.querySelectorAll("td");
+    for (var i in entries) {
+        var row = entries[i];
+        if (row.id != "") {
+            row.innerHTML = feature['feature']['properties'][row.id];
+        }
+    }
+}
+
+// Add geojson to map with onclick function
+var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
 
 // Style features according to layer type
 wegeLayer.eachLayer(function(feature) {
@@ -75,8 +105,6 @@ checkboxes.forEach(function(checkbox) {
     })
   });
 });
-
-
 
 // Toggle-Editmode
 // Funktion beim laden der Seite aufrufen
