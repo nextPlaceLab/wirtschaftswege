@@ -75,3 +75,40 @@ checkboxes.forEach(function(checkbox) {
     })
   });
 });
+
+// Table content
+function attributes(feature, layer) {
+    var tableContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['STS'] !== null ? autolinker.link(feature.properties['STS'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+            <tr>\
+                <th scope="row">Straßenname: </th>\
+                <td>' + (feature.properties['NAM'] !== null ? autolinker.link(feature.properties['NAM'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Wegekategorie: </th>\
+                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Alternative Wegekat.: </th>\
+                <td>' + (feature.properties['WEGKAT-ALT'] !== null ? autolinker.link(feature.properties['WEGKAT-ALT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Zukünftige Wegekat.: </th>\
+                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Abschnittslänge (m): </th>\
+                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Priorität: </th>\
+                <td>' + (feature.properties['PRIO'] !== null ? autolinker.link(feature.properties['PRIO'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Handlungsempfehlung: </th>\
+                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
+            </tr>\
+        </table>';
+}
+
+// Onclick selection
+
