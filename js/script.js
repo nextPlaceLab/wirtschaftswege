@@ -14,6 +14,64 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
 // Default projection to convert from
 proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
 
+///
+/// REQUEST
+///
+
+// Calculate map bounding box
+var bounds = map.getBounds();
+var swLng = bounds.getSouthWest().lng;
+var swLat = bounds.getSouthWest().lat;
+var neLng = bounds.getNorthEast().lng;
+var neLat = bounds.getNorthEast().lat;
+// Reproject it
+var swCorner = {x: swLng, y: swLat};
+var neCorner = {x: neLng, y: neLat};
+var swCornerProj = proj4('EPSG:25832', swCorner);
+var neCornerProj = proj4('EPSG:25832', neCorner);
+// Final bbox
+var bbox = swCornerProj.x + ',' + swCornerProj.y + ',' + neCornerProj.x + ',' + neCornerProj.y + ',';
+
+// Read request file
+var requestFile = "src/request4_store.xml";
+var requestHttp = new JKL.ParseXML(requestFile);
+var requestData = requestHttp.parse();
+var inputs = requestData['wps:Execute']['wps:DataInputs']['wps:Input'];
+// Modify bbox in file
+for (var i in inputs) {
+    var address = inputs[i]['wps:Reference']['xlink:href'];
+    var start = address.split("&bbox=")[0];
+    var end = address.split("EPSG")[1];
+    var newAddress = start + "&bbox=" + bbox + "EPSG" + end;
+    requestData['wps:Execute']['wps:DataInputs']['wps:Input'][i]['wps:Reference']['xlink:href'] = newAddress;
+}
+
+var sendRequest = json2xml(requestData, "");
+
+var requestUrl = 'https://wps.livinglab-essigfabrik.online:5000/wps?service=WPS&version=1.0.0&request=Execute';
+/*
+$.ajax({
+    type: "POST",
+    dataType: "xml",
+    url: requestUrl,
+    data: sendRequest,
+    success: function(respData) {
+        console.log(respData);
+    },
+    error: function(errorData) {
+        console.log("error: " + errorData.statusText);
+    }
+})
+*/
+var ajax = $.ajax({
+    url: 'https://wps.livinglab-essigfabrik.online:5000/wps',
+    data: sendRequest,
+    dataType: 'application/xml',
+    success : function (response) {
+        console.log(response);
+    }
+});
+
 // Layer Styles
 var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
 
