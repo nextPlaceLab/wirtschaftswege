@@ -32,8 +32,38 @@ var json = (function() {
     return json;
 })();
 
-// Add geojson to map
-var wegeLayer = L.Proj.geoJson(json).addTo(map);
+// Show attributes on click
+// Onclick function
+function onclick(feature, layer) {
+    layer.on({
+        click: attributes
+    });
+}
+// Add atributes function
+function attributes(e) {
+    //First reset style of all features
+    wegeLayer.eachLayer(function(feature) {
+        feature.setStyle({
+            weight: 2,
+        })
+    });
+    // Then highlight clicked feature
+    feature = e.target;
+    feature.setStyle({
+        weight: 5,
+    });
+    // Then fill attribute table
+    var entries = document.querySelectorAll("td");
+    for (var i in entries) {
+        var row = entries[i];
+        if (row.id != "") {
+            row.innerHTML = feature['feature']['properties'][row.id];
+        }
+    }
+}
+
+// Add geojson to map with onclick function
+var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
 
 // Style features according to layer type
 wegeLayer.eachLayer(function(feature) {
@@ -76,39 +106,9 @@ checkboxes.forEach(function(checkbox) {
   });
 });
 
-// Table content
-function attributes(feature, layer) {
-    var tableContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['STS'] !== null ? autolinker.link(feature.properties['STS'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-            <tr>\
-                <th scope="row">Straßenname: </th>\
-                <td>' + (feature.properties['NAM'] !== null ? autolinker.link(feature.properties['NAM'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Wegekategorie: </th>\
-                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Alternative Wegekat.: </th>\
-                <td>' + (feature.properties['WEGKAT-ALT'] !== null ? autolinker.link(feature.properties['WEGKAT-ALT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Zukünftige Wegekat.: </th>\
-                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Abschnittslänge (m): </th>\
-                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Priorität: </th>\
-                <td>' + (feature.properties['PRIO'] !== null ? autolinker.link(feature.properties['PRIO'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Handlungsempfehlung: </th>\
-                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
-            </tr>\
-        </table>';
-}
 
-// Onclick selection
+
+
+
+
 
