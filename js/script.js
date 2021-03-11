@@ -106,8 +106,25 @@ checkboxes.forEach(function(checkbox) {
   });
 });
 
+// Toggle-Editmode
+// Funktion beim laden der Seite aufrufen
+window.addEventListener("load", function() {
 
+     // Der ID den Event-Handler 'click' hinzufügen,
+     // als Event die Funktion 'toggleModes' aufrufen.
+     document.getElementById("editmode").addEventListener("click", toggleModes);
+    }
+   );
+    function toggleModes() {
 
+        if (document.getElementById("editmode").checked) {
+        alert('You are now in Edit-Mode');
+        // Vielleicht könnte hier ein roter Rahmen um die Karte angezeigt werden?
+        } else {
+        alert('You are now in View-Mode');
+
+        }
+}
 
 
 
