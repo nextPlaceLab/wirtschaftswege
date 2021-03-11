@@ -9,6 +9,7 @@ body {
     margin: 0;
     font-family: Poppins;
     height: 100%;
+    color: var(--text);
 }
 
 .wrapper {
@@ -109,5 +110,16 @@ li {
 h6 {
     margin-bottom: 0;
     margin-top: 0;
+    padding: 10px;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+td {
+    font-size: 11px;
+}
+
+table {
     padding: 10px;
 }
