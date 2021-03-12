@@ -48,29 +48,31 @@ for (var i in inputs) {
 
 var sendRequest = json2xml(requestData, "");
 
-var requestUrl = 'https://wps.livinglab-essigfabrik.online:5000/wps?service=WPS&version=1.0.0&request=Execute';
-/*
-$.ajax({
-    type: "POST",
-    dataType: "xml",
-    url: requestUrl,
-    data: sendRequest,
-    success: function(respData) {
-        console.log(respData);
-    },
-    error: function(errorData) {
-        console.log("error: " + errorData.statusText);
-    }
+var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&version=1.0.0&request=Execute';
+var capabilitiesUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=wps&request=GetCapabilities';
+
+$('#request-exe').click(function() {
+    var ajax = $.ajax({
+        type: 'POST',
+        url: requestUrl,
+        data: sendRequest,
+        dataType: 'application/xml',
+        success : function (response) {
+            console.log(response);
+        }
+    });
 })
-*/
-var ajax = $.ajax({
-    url: 'https://wps.livinglab-essigfabrik.online:5000/wps',
-    data: sendRequest,
-    dataType: 'application/xml',
-    success : function (response) {
-        console.log(response);
-    }
-});
+
+$('#request-cap').click(function() {
+    var ajax = $.ajax({
+        type: 'GET',
+        url: capabilitiesUrl,
+        dataType: 'application/xml',
+        success : function (response) {
+            console.log(response);
+        }
+    });
+})
 
 // Layer Styles
 var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
