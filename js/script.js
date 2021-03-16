@@ -131,8 +131,7 @@ checkboxes.forEach(function(checkbox) {
 // Funktion beim laden der Seite aufrufen
 window.addEventListener("load", function() {
 
-     // Der ID den Event-Handler 'click' hinzufügen,
-     // als Event die Funktion 'toggleModes' aufrufen.
+     // Der ID den Event-Handler 'click' hinzufügen
      document.getElementById("baselayerSwitcher").addEventListener("click", toggleBaselayer);
     }
    );
@@ -148,5 +147,31 @@ window.addEventListener("load", function() {
 }
 
 
+// AlmostOver
+window.onload = function () {
 
 
+    map.almostOver.addLayer(wegeLayer);
+
+    var circle = L.circleMarker([0, 0], {radius: 5, fillColor: 'white', fillOpacity: 1});
+
+    map.on('almost:over', function (e) {
+      map.addLayer(circle);
+      e.layer.setStyle({color: 'red'});
+    });
+
+    map.on('almost:move', function (e) {
+      circle.setLatLng(e.latlng);
+    });
+
+    map.on('almost:out', function (e) {
+      map.removeLayer(circle);
+      e.layer.setStyle({weight: 5, color: '#03f'});
+    });
+
+    map.on('almost:click', function (e) {
+      e.layer.setStyle({weight: 10});
+      // @Amanda: Vielleicht muss hier die function onClick aufgerufen werden? 
+
+    });
+  };
