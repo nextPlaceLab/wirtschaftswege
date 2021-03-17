@@ -1,6 +1,6 @@
 // Initiate map
 var map = L.map('map').setView([52.01799,9.03725], 13);
-
+//var map = L.map('map', {almostOnMouseMove: false,}).setView([52.01799,9.03725], 13);
 
 // Set up Base-Layers
 // Set up Luftbild Layer
@@ -51,11 +51,13 @@ var json = (function() {
 
 // Show attributes on click
 // Onclick function
+/*
 function onclick(feature, layer) {
     layer.on({
         click: attributes
     });
 }
+*/
 // Add atributes function
 function attributes(e) {
     //First reset style of all features
@@ -65,7 +67,8 @@ function attributes(e) {
         })
     });
     // Then highlight clicked feature
-    feature = e.target;
+    //feature = e.target;
+    feature = e.layer;
     feature.setStyle({
         weight: 5,
     });
@@ -80,7 +83,8 @@ function attributes(e) {
 }
 
 // Add geojson to map with onclick function
-var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
+//var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
+var wegeLayer = L.Proj.geoJson(json).addTo(map);
 
 // Style features according to layer type
 wegeLayer.eachLayer(function(feature) {
@@ -91,7 +95,6 @@ wegeLayer.eachLayer(function(feature) {
         opacity: 1,
     })
 });
-
 
 // Turn Layers on and off
 // Function to show layer
@@ -119,7 +122,7 @@ checkboxes.forEach(function(checkbox) {
                 feature.setStyle(show());
                 L.control()
             } else {
-                feature.setStyle(hide());
+                feature.setZIndex(-1);
             }
         }
     })
@@ -150,28 +153,37 @@ window.addEventListener("load", function() {
 // AlmostOver
 window.onload = function () {
 
-
     map.almostOver.addLayer(wegeLayer);
 
     var circle = L.circleMarker([0, 0], {radius: 5, fillColor: 'white', fillOpacity: 1});
 
     map.on('almost:over', function (e) {
-      map.addLayer(circle);
-      e.layer.setStyle({color: 'red'});
+        //First reset style of all features
+        /*
+        wegeLayer.eachLayer(function(feature) {
+            feature.setStyle({
+                weight: 2,
+            })
+        });
+        */
+        map.addLayer(circle);
+        //e.layer.setStyle({weight: 5});
     });
 
     map.on('almost:move', function (e) {
-      circle.setLatLng(e.latlng);
+        circle.setLatLng(e.latlng);
     });
-
+    /*
     map.on('almost:out', function (e) {
       map.removeLayer(circle);
-      e.layer.setStyle({weight: 5, color: '#03f'});
+      e.layer.setStyle({weight: 2});
     });
-
+    */
     map.on('almost:click', function (e) {
-      e.layer.setStyle({weight: 10});
+        map.addLayer(circle);
+        attributes(e);
       // @Amanda: Vielleicht muss hier die function onClick aufgerufen werden? 
 
     });
+    
   };
