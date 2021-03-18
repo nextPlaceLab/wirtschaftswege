@@ -1,5 +1,7 @@
 // Initiate map
-var map = L.map('map').setView([52.01799,9.03725], 13);
+var map = L.map('map', {
+    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
+}).setView([52.01799,9.03725], 13);
 
 
 // Set up Base-Layers
@@ -25,6 +27,14 @@ var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}
     zoomOffset: -1,
     accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
 });
+
+//Geocoder
+var osmGeocoder = new L.Control.Geocoder({
+    collapsed: true,
+    position: 'topleft',
+    text: 'Suche',
+    title: 'Suche'
+}).addTo(map);
 
 
 
@@ -80,7 +90,10 @@ function attributes(e) {
 }
 
 // Add geojson to map with onclick function
+//var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
 var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
+
+
 
 // Style features according to layer type
 wegeLayer.eachLayer(function(feature) {
