@@ -22,6 +22,11 @@
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
     <script type="text/javascript" src="src/json2xml.js"></script>
 
+     <!-- -------Geocoder Search-Bar------->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+
     <!-- Layers File -->
     <link rel="layers" type="application/json" href="data/layers.geojson">
 
@@ -58,8 +63,8 @@
             </div>
 
             <label class="switch">
-                <input type="checkbox" id="editmode">
-                <span class="slider round"></span>Toggle Editmode
+                <input type="checkbox" id="baselayerSwitcher">
+                <span class="slider round"></span>Base Layer Toggle
             </label>
             
             <h6>Wege Kategorien</h6>

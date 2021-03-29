@@ -3,17 +3,44 @@
 ///
 
 // Initiate map
-var map = L.map('map').setView([52.01799,9.03725], 13);
+var map = L.map('map', {
+    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
+}).setView([52.01799,9.03725], 13);
 
-// Set up tile layer
-L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+
+// Set up Base-Layers
+// Set up Luftbild Layer
+var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+    layers: 'nw_dop_rgb',
+    format: 'image/png',
+    version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6
+}).addTo(map);
+
+// Set up OSM tile layer 
+var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
     id: 'mapbox/light-v10',
     tileSize: 512,
     zoomOffset: -1,
     accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
+});
+
+//Geocoder
+var osmGeocoder = new L.Control.Geocoder({
+    collapsed: true,
+    position: 'topleft',
+    text: 'Suche',
+    title: 'Suche'
 }).addTo(map);
+
+
 
 // Default projection to convert from
 proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
@@ -231,7 +258,10 @@ function attributes(e) {
 
 /*
 // Add geojson to map with onclick function
+//var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
 var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
+
+
 
 // Style features according to layer type
 wegeLayer.eachLayer(function(feature) {
@@ -243,6 +273,7 @@ wegeLayer.eachLayer(function(feature) {
     })
 });
 */
+
 
 // Turn Layers on and off
 // Function to show layer
@@ -257,6 +288,7 @@ function hide() {
         opacity: 0,
     };
 }
+
 // Get checkboxes
 var checkboxes = document.querySelectorAll("input[type=checkbox]");
 // Listen for changes
@@ -267,6 +299,7 @@ checkboxes.forEach(function(checkbox) {
         if (type == checkbox.id) {
             if (checkbox.checked) {
                 feature.setStyle(show());
+                L.control()
             } else {
                 feature.setStyle(hide());
             }
@@ -275,23 +308,24 @@ checkboxes.forEach(function(checkbox) {
   });
 });
 
-// Toggle-Editmode
+
+// Toggle-BaseLayers
 // Funktion beim laden der Seite aufrufen
 window.addEventListener("load", function() {
 
      // Der ID den Event-Handler 'click' hinzufügen,
      // als Event die Funktion 'toggleModes' aufrufen.
-     document.getElementById("editmode").addEventListener("click", toggleModes);
+     document.getElementById("baselayerSwitcher").addEventListener("click", toggleBaselayer);
     }
    );
-    function toggleModes() {
+    function toggleBaselayer() {
 
-        if (document.getElementById("editmode").checked) {
-        alert('You are now in Edit-Mode');
-        // Vielleicht könnte hier ein roter Rahmen um die Karte angezeigt werden?
+        if (document.getElementById("baselayerSwitcher").checked) {
+        map.addLayer(OSM_Layer),
+        map.removeLayer(NRW_Luftbild);
         } else {
-        alert('You are now in View-Mode');
-
+        map.removeLayer(OSM_Layer),
+        map.addLayer(NRW_Luftbild);
         }
 }
 
