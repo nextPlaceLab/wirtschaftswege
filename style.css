@@ -5,6 +5,10 @@
     --color1: blue;
 }
 
+a {
+  font-size: 11px;
+}
+
 body {
     margin: 0;
     font-family: Poppins;
@@ -57,7 +61,7 @@ body {
 }
 
 .logo {
-    width: 15%;
+    width: 25%;
     float: left;
 }
 
@@ -69,7 +73,7 @@ body {
 
 .sidebar {
     position: fixed;
-    width: 15%;
+    width: 25%;
     background-color: var(--background);
     border-right: 1px solid var(--border);
     font-size: 21px;
@@ -83,7 +87,7 @@ body {
 
 #map {
     position: fixed;            
-    margin-left: 15%;
+    margin-left: 25%;
     margin-top: 100px;
     height: 100%;
     width: 100%;
@@ -114,6 +118,51 @@ h6 {
     text-decoration: none;
     text-transform: uppercase;
     font-weight: 400;
+}
+
+p {
+  margin-bottom: 0;
+  margin-top: 0;
+  font-size: 11px;
+}
+
+#sidebar-content {
+  padding: 10px;
+}
+
+.button {
+  width: 100%;
+  background-color: #ccc;
+  border: none;
+  color: white;
+  padding: 10px 0px;
+  text-align: center;
+  text-decoration: none;
+  float: left;
+  font-family: "Quicksand";
+  font-size: 16px;
+  transition-duration: 0.2s;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+.button:hover:enabled {
+  background-color: var(--color1);
+  color: white;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.button:active {
+  background-color: var(--color1);
+  opacity: 0.8;
+  border: none;
+  color: white;
+}
+
+.button:focus {
+  outline-color: #f7f7f9;
 }
 
  /* Toggle Switch */

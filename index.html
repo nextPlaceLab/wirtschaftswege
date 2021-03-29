@@ -18,6 +18,9 @@
     <script src="src/proj4leaflet.js"></script>
     <!-- Jquery -->
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <!-- XML Parser Library -->
+    <script type="text/javascript" src="src/jkl-parsexml.js"></script>
+    <script type="text/javascript" src="src/json2xml.js"></script>
 
      <!-- -------Geocoder Search-Bar------->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -50,15 +53,20 @@
         </div>
 
         <div class="sidebar">
+
             <h6>Wirtschaftswege - Analyse</h6>
 
-                <label class="switch">
-                    <input type="checkbox" id="baselayerSwitcher">
-                    <span class="slider round"></span>Base Layer Toggle
-                </label>
+            <div id="sidebar-content">
+                <!--<a href="#test" id="test">Test</a>-->
+                <p>Zoomen Sie auf den gewünschten Bereich</p>
+                <button class="button" id="request-exe">Wege Kategorisieren</button> 
+            </div>
 
-
-
+            <label class="switch">
+                <input type="checkbox" id="baselayerSwitcher">
+                <span class="slider round"></span>Base Layer Toggle
+            </label>
+            
             <h6>Wege Kategorien</h6>
             <ul>
                 <li><input type="checkbox" id="a" checked><span style="background: #d8000a;"></span>A_klassifiziert</li>
