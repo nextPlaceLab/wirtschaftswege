@@ -1,4 +1,51 @@
 /// 
+/// IN CASE WE NEED IT
+///
+
+/*
+// Add layers from file
+var json = (function() {
+    var json = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "data/layers.geojson",
+      'dataType': "json",
+      'success': function(data) {
+          json = data;
+      }
+    });
+    return json;
+})();
+*/
+
+/*
+// Make test request
+$('#test').click(function() {
+
+    var answer = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "src/status-with-features.xml",
+      'dataType': "text",
+      'success': function(response) {
+          answer = response;
+      }
+    });
+    if (status.includes('href=')) {
+        console.log('nope');
+    } else {
+        var statusFeatures = answer.split('<![CDATA[').pop().split(']]>')[0];
+        console.log(statusFeatures);
+        var json = JSON.parse(statusFeatures);
+        console.log(json);
+        var testlayer = L.Proj.geoJson(json).addTo(map);
+    }
+})
+*/
+
+/// 
 /// MAP
 ///
 
@@ -6,7 +53,6 @@
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
-
 
 // Set up Base-Layers
 // Set up Luftbild Layer
@@ -39,8 +85,6 @@ var osmGeocoder = new L.Control.Geocoder({
     text: 'Suche',
     title: 'Suche'
 }).addTo(map);
-
-
 
 // Default projection to convert from
 proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
@@ -83,31 +127,6 @@ function getBbox() {
     return bbox;
 }
 
-/*
-$('#test').click(function() {
-
-    var answer = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "src/status-with-features.xml",
-      'dataType': "text",
-      'success': function(response) {
-          answer = response;
-      }
-    });
-    if (status.includes('href=')) {
-        console.log('nope');
-    } else {
-        var statusFeatures = answer.split('<![CDATA[').pop().split(']]>')[0];
-        console.log(statusFeatures);
-        var json = JSON.parse(statusFeatures);
-        console.log(json);
-        var testlayer = L.Proj.geoJson(json).addTo(map);
-    }
-})
-*/
-
 // When button is clicked, make request
 $('#request-exe').click(function() {
     var t0 = performance.now()
@@ -144,7 +163,6 @@ $('#request-exe').click(function() {
                 // Request features and add to 
                 getGeojson(geojsonUrl);
                 addGeojson();
-
 
             } else {
                 // If they're in response, parse and add to layer
@@ -193,38 +211,30 @@ function getGeojson(url) {
 // Function to add result features into map
 function addGeojson(url) {
 
+    // Add features to map
     wegeLayer.addData(geoJson);
 
     wegeLayer.eachLayer(function(feature) {
+        // Style features
         var type = feature['feature']['properties']['WEGKAT'];
         feature.setStyle({
             color: styles[type],
             weight: 2,
             opacity: 1,
         })
+        // Add attributes for change
+        feature['feature']['properties']['wdm-neue'] = null;
+        feature['feature']['properties']['zus-neue'] = null;
+        feature['feature']['properties']['selected'] = false;
     });
-
 }
 
 // Layer Styles
 var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
 
-/*
-// Read geojson with layers
-var json = (function() {
-    var json = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "data/layers.geojson",
-      'dataType': "json",
-      'success': function(data) {
-          json = data;
-      }
-    });
-    return json;
-})();
-*/
+/// 
+/// ATTRIBUTE TABELLE
+///
 
 // Show attributes on click
 // Onclick function
@@ -240,13 +250,17 @@ function attributes(e) {
         feature.setStyle({
             weight: 2,
         })
+        feature['feature']['properties']['selected'] = false;
     });
     // Then highlight clicked feature
     feature = e.target;
     feature.setStyle({
         weight: 5,
     });
+    // Mark feature as selected
+    feature['feature']['properties']['selected'] = true;
     // Then fill attribute table
+    // Attributes that can't be changed
     var entries = document.querySelectorAll("td");
     for (var i in entries) {
         var row = entries[i];
@@ -254,26 +268,23 @@ function attributes(e) {
             row.innerHTML = feature['feature']['properties'][row.id];
         }
     }
+    // Changeable attributes
+    var wdmSelect = document.getElementById("wdm-neue");
+    wdmSelect.value = feature['feature']['properties']['wdm-neue'];
+    var zusSelect = document.getElementById("zus-neue");
+    zusSelect.value = feature['feature']['properties']['zus-neue'];
 }
 
-/*
-// Add geojson to map with onclick function
-//var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
-var wegeLayer = L.Proj.geoJson(json, {onEachFeature: onclick}).addTo(map);
-
-
-
-// Style features according to layer type
-wegeLayer.eachLayer(function(feature) {
-    var type = feature['feature']['properties']['WEGKAT'];
-    feature.setStyle({
-        color: styles[type],
-        weight: 2,
-        opacity: 1,
-    })
-});
-*/
-
+// Attribute change
+function changeAttribute(e) {
+    // Find selected feature
+    wegeLayer.eachLayer(function(feature) {
+        if (feature['feature']['properties']['selected']) {
+            // Change attribute
+            feature['feature']['properties'][e.id] = e.value;
+        }
+    });
+}
 
 // Turn Layers on and off
 // Function to show layer
@@ -308,6 +319,9 @@ checkboxes.forEach(function(checkbox) {
   });
 });
 
+/// 
+/// TOGGLE
+///
 
 // Toggle-BaseLayers
 // Funktion beim laden der Seite aufrufen
