@@ -1,51 +1,4 @@
 /// 
-/// IN CASE WE NEED IT
-///
-
-/*
-// Add layers from file
-var json = (function() {
-    var json = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "data/layers.geojson",
-      'dataType': "json",
-      'success': function(data) {
-          json = data;
-      }
-    });
-    return json;
-})();
-*/
-
-/*
-// Make test request
-$('#test').click(function() {
-
-    var answer = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "src/status-with-features.xml",
-      'dataType': "text",
-      'success': function(response) {
-          answer = response;
-      }
-    });
-    if (status.includes('href=')) {
-        console.log('nope');
-    } else {
-        var statusFeatures = answer.split('<![CDATA[').pop().split(']]>')[0];
-        console.log(statusFeatures);
-        var json = JSON.parse(statusFeatures);
-        console.log(json);
-        var testlayer = L.Proj.geoJson(json).addTo(map);
-    }
-})
-*/
-
-/// 
 /// MAP
 ///
 
@@ -53,6 +6,13 @@ $('#test').click(function() {
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
+
+map.on('click', function(e) {
+    // Check if any Weg was selected
+
+    console.log("the map was clicked");
+
+})
 
 // Set up Base-Layers
 // Set up Luftbild Layer
@@ -65,7 +25,7 @@ var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop",
     attribution: "",
     tiled: true,
     maxZoom: 22,
-    minZoom: 6
+    minZoom: 6,
 }).addTo(map);
 
 // Set up OSM tile layer 
@@ -237,6 +197,24 @@ var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e
 ///
 
 // Show attributes on click
+
+var wdmValues = {
+    null: " - ",
+    "1301": "Bundesautobahn",
+    "1303": "Bundesstraße",
+    "1305": "Landesstraße, Staatstraße",
+    "1306": "Kreisstraße",
+    "1307": "Gemeindestraße",
+    "9997": "Attribut trifft nicht zu",
+    "9999": "Sonstiges",
+}
+
+var zusValues = {
+    null: " - ",
+    "2100": "Außer Betrieb, stillgelegt, verlassen",
+    "4000": "Im Bau"
+}
+
 // Onclick function
 function onclick(feature, layer) {
     layer.on({
@@ -245,6 +223,7 @@ function onclick(feature, layer) {
 }
 // Add atributes function
 function attributes(e) {
+    L.DomEvent.stopPropagation(e);
     //First reset style of all features
     wegeLayer.eachLayer(function(feature) {
         feature.setStyle({
@@ -259,20 +238,45 @@ function attributes(e) {
     });
     // Mark feature as selected
     feature['feature']['properties']['selected'] = true;
+    // Show attribut tabelle
+    document.getElementById("tabelle").style.display = "block";
     // Then fill attribute table
     // Attributes that can't be changed
     var entries = document.querySelectorAll("td");
     for (var i in entries) {
         var row = entries[i];
         if (row.id != "") {
-            row.innerHTML = feature['feature']['properties'][row.id];
+            if ((row.id == "wdm") || (row.id == "zus")) {
+                var value = feature['feature']['properties'][row.id];
+                var values = row.id + "Values";
+                row.innerHTML = window[values][value];
+            } else {
+                var value = feature['feature']['properties'][row.id];
+                if (value) {
+                    row.innerHTML = value;
+                } else {
+                    row.innerHTML = " - ";
+                }
+            }
         }
     }
     // Changeable attributes
     var wdmSelect = document.getElementById("wdm-neue");
-    wdmSelect.value = feature['feature']['properties']['wdm-neue'];
+    var wdmValue = feature['feature']['properties']['wdm-neue'];
+    if (wdmValue) {
+        wdmSelect.value = wdmValue;
+    } else {
+        wdmSelect.value = "";
+    }
     var zusSelect = document.getElementById("zus-neue");
-    zusSelect.value = feature['feature']['properties']['zus-neue'];
+    var zusValue = feature['feature']['properties']['zus-neue'];
+    if (zusValue) {
+        zusSelect.value = zusValue;
+    } else {
+        zusSelect.value = "";
+    }
+
+    wegClicked = false;
 }
 
 // Attribute change
@@ -281,10 +285,41 @@ function changeAttribute(e) {
     wegeLayer.eachLayer(function(feature) {
         if (feature['feature']['properties']['selected']) {
             // Change attribute
-            feature['feature']['properties'][e.id] = e.value;
+            var attNeue = e.id;
+            var attOld = attNeue.substr(0, attNeue.indexOf('-'));
+            var oldValue = feature['feature']['properties'][attOld];
+            var newValue = e.value;
+            if ((newValue != oldValue) && (newValue != "")) {
+                feature['feature']['properties'][attNeue] = e.value;
+            } else {
+                feature['feature']['properties'][attNeue] = null;
+            }
+            // Change style
+            if ((newValue != oldValue) && (newValue != "")) {
+                feature.setStyle(changed());
+            } else {
+                feature.setStyle(notChanged());
+            }
         }
     });
 }
+
+// Function to show that layer has attributes changed
+function changed() {
+    return {
+        dashArray: '5',
+    }
+}
+// Function to show that layer has no changes
+function notChanged() {
+    return {
+        dashArray: null,
+    }
+}
+
+/// 
+/// LAYER CONTROL
+///
 
 // Turn Layers on and off
 // Function to show layer
@@ -342,6 +377,53 @@ window.addEventListener("load", function() {
         map.addLayer(NRW_Luftbild);
         }
 }
+
+/// 
+/// IN CASE WE NEED IT
+///
+
+/*
+// Add layers from file
+var json = (function() {
+    var json = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "data/layers.geojson",
+      'dataType': "json",
+      'success': function(data) {
+          json = data;
+      }
+    });
+    return json;
+})();
+*/
+
+/*
+// Make test request
+$('#test').click(function() {
+
+    var answer = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "src/status-with-features.xml",
+      'dataType': "text",
+      'success': function(response) {
+          answer = response;
+      }
+    });
+    if (status.includes('href=')) {
+        console.log('nope');
+    } else {
+        var statusFeatures = answer.split('<![CDATA[').pop().split(']]>')[0];
+        console.log(statusFeatures);
+        var json = JSON.parse(statusFeatures);
+        console.log(json);
+        var testlayer = L.Proj.geoJson(json).addTo(map);
+    }
+})
+*/
 
 
 
