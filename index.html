@@ -67,51 +67,94 @@
                 <span class="slider round"></span>Base Layer Toggle
             </label>
             
-            <h6>Wege Kategorien</h6>
-            <ul>
-                <li><input type="checkbox" id="a" checked><span style="background: #d8000a;"></span>A_klassifiziert</li>
-                <li><input type="checkbox" id="b" checked><span style="background: #03bebe;"></span>B_multifunktionaler Verbindungsweg</li>
-                <li><input type="checkbox" id="c" checked><span style="background: #ffb41d;"></span>C_Hauptwirtschaftsweg</li>
-                <li><input type="checkbox" id="d" checked><span style="background: #51ad37;"></span>D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</li>
-                <li><input type="checkbox" id="e" checked><span style="background: #153dcf;"></span>E_untergeordneter Erschließungsweg mit luf Verkehr</li>
-                <li><input type="checkbox" id="f" checked><span style="background: #f343eb;"></span>F_Einzelerschließung kaum luf Verkehr</li>
-                <li><input type="checkbox" id="i" checked><span style="background: #51ad37;"></span>I_Rad-, Reit-, Fußweg</li>
-              </ul>
-            <h6>Attribut Tabelle</h6>
-            <table id="attributes">
-                <tr>
-                    <td>Wegenummer:</td>
-                    <td id="STS"></td>
-                </tr>
-                <tr>
-                    <td>Straßenname:</td>
-                    <td id="NAM"></td>
-                </tr>
-                <tr>
-                    <td>Wegekategorie:</td>
-                    <td id="WEGKAT"></td>
-                </tr>
-                <tr>
-                    <td>Alternative Wegekat.:</td>
-                    <td id="WEGKAT-ALT"></td>
-                </tr>
-                <tr>
-                    <td>Zukünftige Wegekat.:</td>
-                    <td id="ZWEGKAT"></td>
-                </tr>
-                <tr>
-                    <td>Abschnittslänge (m):</td>
-                    <td id="LAENGE"></td>
-                </tr>
-                <tr>
-                    <td>Priorität:</td>
-                    <td id="PRIO"></td>
-                </tr>
-                <tr>
-                    <td>Handlungsempfehlung:</td>
-                    <td id="HANDL"></td>
-                </tr>
-            </table>
+            <!-- Layer Control Panel -->
+            <div id="layer-control" style="display: none">
+                <h6>Wege Kategorien</h6>
+                <ul>
+                    <li><input type="checkbox" id="a" checked><span style="background: #d8000a;"></span>A_klassifiziert</li>
+                    <li><input type="checkbox" id="b" checked><span style="background: #03bebe;"></span>B_multifunktionaler Verbindungsweg</li>
+                    <li><input type="checkbox" id="c" checked><span style="background: #ffb41d;"></span>C_Hauptwirtschaftsweg</li>
+                    <li><input type="checkbox" id="d" checked><span style="background: #51ad37;"></span>D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</li>
+                    <li><input type="checkbox" id="e" checked><span style="background: #153dcf;"></span>E_untergeordneter Erschließungsweg mit luf Verkehr</li>
+                    <li><input type="checkbox" id="f" checked><span style="background: #f343eb;"></span>F_Einzelerschließung kaum luf Verkehr</li>
+                    <li><input type="checkbox" id="i" checked><span style="background: #51ad37;"></span>I_Rad-, Reit-, Fußweg</li>
+                </ul>
+            </div>
+            
+            <!-- Attribut Tabelle -->
+            <div id="tabelle" style="display: none">
+                <h6>Attribut Tabelle</h6>
+                <table id="attributes">
+                    <tr>
+                        <td>ATTRIBUT</td>
+                        <td>WERT</td>
+                        <td>NEUER WERT</td>
+                    </tr>
+                    <tr>
+                        <td>Wegenummer:</td>
+                        <td id="STS"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Straßenname:</td>
+                        <td id="NAM"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Wegekategorie:</td>
+                        <td id="WEGKAT"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Alternative Wegekat.:</td>
+                        <td id="WEGKAT-ALT"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Zukünftige Wegekat.:</td>
+                        <td id="ZWEGKAT"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Abschnittslänge (m):</td>
+                        <td id="LAENGE"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Priorität:</td>
+                        <td id="PRIO"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Handlungsempfehlung:</td>
+                        <td id="HANDL"></td>
+                        <td> - </td>
+                    </tr>
+                    <tr>
+                        <td>Widmung:</td>
+                        <td id="wdm"></td>
+                        <td><select id="wdm-neue" onchange="changeAttribute(this)">
+                            <option value=""> - </option>
+                            <option value="1301">Bundesautobahn</option>
+                            <option value="1303">Bundesstraße</option>
+                            <option value="1305">Landesstraße, Staatstraße</option>
+                            <option value="1306">Kreisstraße</option>
+                            <option value="1307">Gemeindestraße</option>
+                            <option value="9997">Attribut trifft nicht zu</option>
+                            <option value="9999">Sonstiges</option>
+                        </select></td>
+                    </tr>
+                    <tr>
+                        <td>Zustand:</td>
+                        <td id="zus"></td>
+                        <td><select id="zus-neue" onchange="changeAttribute(this)">
+                            <option value=""> - </option>
+                            <option value="2100">Außer Betrieb, stillgelegt, verlassen</option>
+                            <option value="4000">Im Bau</option>
+                        </select></td>
+                    </tr>
+                </table>
+            </div>
         </div>
 
         <div id="map"></div>
