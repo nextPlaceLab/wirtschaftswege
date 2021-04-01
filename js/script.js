@@ -7,13 +7,6 @@ var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
 
-map.on('click', function(e) {
-    // Check if any Weg was selected
-
-    console.log("the map was clicked");
-
-})
-
 // Set up Base-Layers
 // Set up Luftbild Layer
 var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
@@ -187,6 +180,9 @@ function addGeojson(url) {
         feature['feature']['properties']['zus-neue'] = null;
         feature['feature']['properties']['selected'] = false;
     });
+
+    // Show Layer Panel
+    document.getElementById("layer-control").style.display = "block";
 }
 
 // Layer Styles
@@ -250,6 +246,10 @@ function attributes(e) {
                 var value = feature['feature']['properties'][row.id];
                 var values = row.id + "Values";
                 row.innerHTML = window[values][value];
+            } else if (row.id == "LAENGE") {
+                var laenge = feature['feature']['properties'][row.id];
+                var rounded = laenge.toFixed(2);
+                row.innerHTML = rounded;
             } else {
                 var value = feature['feature']['properties'][row.id];
                 if (value) {
@@ -275,8 +275,6 @@ function attributes(e) {
     } else {
         zusSelect.value = "";
     }
-
-    wegClicked = false;
 }
 
 // Attribute change
@@ -316,6 +314,19 @@ function notChanged() {
         dashArray: null,
     }
 }
+
+// Hide Table when click outside of map
+map.on('click', function(e) {
+    // First reset style of all features
+    wegeLayer.eachLayer(function(feature) {
+        feature.setStyle({
+            weight: 2,
+        })
+        feature['feature']['properties']['selected'] = false;
+    });
+    // Hide table
+    document.getElementById("tabelle").style.display = "none";
+})
 
 /// 
 /// LAYER CONTROL
