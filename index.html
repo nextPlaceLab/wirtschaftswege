@@ -26,10 +26,6 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-
-    <!-- Layers File -->
-    <link rel="layers" type="application/json" href="data/layers.geojson">
-
 </head>
 
 <body>
@@ -59,7 +55,9 @@
             <div id="sidebar-content">
                 <!--<a href="#test" id="test">Test</a>-->
                 <p>Zoomen Sie auf den gewünschten Bereich</p>
-                <button class="button" id="request-exe">Wege Kategorisieren</button> 
+                <button class="button" id="request-exe">Wege Kategorisieren</button>
+                <p>Klicken Sie auf einen Weg, um seine Attribute zu ändern</p>
+                <button class="button" id="recalculate">Neu Kategorisieren</button> 
             </div>
 
             <label class="switch">

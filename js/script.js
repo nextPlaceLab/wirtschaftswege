@@ -40,26 +40,37 @@ var osmGeocoder = new L.Control.Geocoder({
 }).addTo(map);
 
 // Default projection to convert from
-proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+//proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+proj4.defs([
+    [
+      'EPSG:4326',
+      '+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'],
+    [
+      'EPSG:25832',
+      '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+    ]
+]);
 
 /// 
 /// REQUEST
 ///
 
 // Read request file template
-var requestFile = "src/request4_store.xml";
-var requestHttp = new JKL.ParseXML.Text(requestFile);
-var requestData = requestHttp.parse();
+//var requestFile = "src/request4_store.xml";
+//var requestHttp = new JKL.ParseXML.Text(requestFile);
+//var requestData = requestHttp.parse();
 // WPS Url
 var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
 // Empty variables to store request information
 var status = 'status';
 var geoJson = null;
+var bbox = null;
 var wegeLayer = L.Proj.geoJson(false, {onEachFeature: onclick}).addTo(map);
 
-function getBbox() {
+function getBbox(bounds) {
     /// Calculate map bounding box ///
-    var bounds = map.getBounds();
+    //var bounds = map.getBounds();
     var swLng = bounds.getSouthWest().lng;
     var swLat = bounds.getSouthWest().lat;
     var neLng = bounds.getNorthEast().lng;
@@ -75,13 +86,27 @@ function getBbox() {
     var neLngProj = neCornerProj.x.toFixed(1);
     var neLatProj = neCornerProj.y.toFixed(1);
     // Final bbox
-    var bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
+    //var bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
+    bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
     
-    return bbox;
+    //return bbox;
 }
 
 // When button is clicked, make request
 $('#request-exe').click(function() {
+
+    var requestFile = "src/request4_store.xml";
+    var bounds = map.getBounds();
+    //var bbox = getBbox(bounds);
+    getBbox(bounds);
+    var features = false;
+    completeRequest(requestFile, bbox, features);
+
+})
+
+// Function to make whole Request
+function completeRequest(requestFile, features) {
+
     var t0 = performance.now()
 
     // First clear variables, in case an old request was made
@@ -89,9 +114,18 @@ $('#request-exe').click(function() {
     geoJson = null;
     wegeLayer.clearLayers();
 
-    var bbox = getBbox();
+    var requestHttp = new JKL.ParseXML.Text(requestFile);
+    var requestData = requestHttp.parse();
+
     // Replace bounding boxes
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
+
+    if (features) {
+        console.log('sending features');
+        sendRequest = sendRequest.replace(/hier die editierten Ergebnisdaten im JSON-Format/g, features);
+    } else {
+        console.log('getting features');
+    }
 
     var ajax = $.ajax({
         type: 'POST',
@@ -129,7 +163,7 @@ $('#request-exe').click(function() {
             console.log(thrownError);
         }
     });
-})
+}
 
 // Function to ask for process status
 function getStatus(url) {
@@ -159,6 +193,7 @@ function getGeojson(url) {
       }
     });
     geoJson = answer;
+    console.log(geoJson);
 };
 
 // Function to add result features into map
@@ -187,6 +222,106 @@ function addGeojson(url) {
 
 // Layer Styles
 var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
+
+/// 
+/// RECALCULATION
+///
+
+function reprojGeojson(Geojson) {
+    //Projection Source and Destination
+    var source = new proj4.Proj('EPSG:4326');
+    var dest = new proj4.Proj('EPSG:25832');
+    features = Geojson.features;
+    for (var i = 0; i < features.length; i++) {
+        var coords = Geojson.features[i].geometry.coordinates;
+        for (var j = 0; j < coords.length; j++) {
+          var coordList = Geojson.features[i].geometry.coordinates[j];
+          if (Array.isArray(coordList[0])) {
+            for (var k = 0; k < coordList.length; k++) {
+              var coordPair = Geojson.features[i].geometry.coordinates[j][k];
+              //create point
+              var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
+              var ptRproj = proj4(source, dest, pt);
+              var coordRproj = [ptRproj.x, ptRproj.y];
+              //replace original coordinate in the geojson
+              Geojson.features[i].geometry.coordinates[j][k] = coordRproj;
+            };
+          } else {
+            var coordPair = Geojson.features[i].geometry.coordinates[j];
+            //create point
+            var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
+            var ptRproj = proj4(source, dest, pt);
+            var coordRproj = [ptRproj.x, ptRproj.y];
+            //replace original coordinate in the geojson
+            Geojson.features[i].geometry.coordinates[j] = coordRproj;
+          }
+        }
+    }
+};
+
+$('#recalculate').click(function() {
+    var orAttr = ["land", 
+        "modellart", 
+        "objart", 
+        "objart_txt", 
+        "objid", 
+        "hdu_x", 
+        "fdv_x", 
+        "beginn", 
+        "ende",
+        "objart_z",
+        "objid_z",
+        "fdv_z_x",
+        "bdi",
+        "bdu",
+        "bez",
+        "bfs",
+        "brf",
+        "brv",
+        "fkt",
+        "fsz",
+        "ftr",
+        "ibd",
+        "nam",
+        "ofm",
+        "sts",
+        "wdm",
+        "znm",
+        "zus",
+    ];
+    // Change attributes
+    wegeLayer.eachLayer(function(feature) {
+        var properties = feature['feature']['properties'];
+        properties['selected'] = false;
+        //properties['wdm-or'] = properties['wdm'];
+        //properties['zus-or'] = properties['zus'];
+        properties['wdm'] = properties['wdm-neue'];
+        properties['zus'] = properties['zus-neue'];
+        
+        for (var key in properties) {
+            if (orAttr.includes(key)) {
+            } else {
+                delete properties[key];
+            }
+        }
+        
+    });
+    // Save layer as geojson
+    var features = wegeLayer.toGeoJSON();
+    console.log(features);
+    //console.log(features);
+    //features["crs"] = { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }
+    //features["name"] = "ver01_1";
+    // Reproject coordinates
+    reprojGeojson(features);
+    // Stringify
+    var featuresString = JSON.stringify(features);
+    var requestFile = "src/request4_store_edited.xml";
+    var bounds = wegeLayer.getBounds();
+    //var bbox = getBbox(bounds);
+    completeRequest(requestFile, featuresString)
+
+});
 
 /// 
 /// ATTRIBUTE TABELLE
@@ -400,7 +535,7 @@ var json = (function() {
     $.ajax({
       'async': false,
       'global': false,
-      'url': "data/layers.geojson",
+      'url': "data/layers-4326.geojson",
       'dataType': "json",
       'success': function(data) {
           json = data;
@@ -408,9 +543,8 @@ var json = (function() {
     });
     return json;
 })();
-*/
 
-/*
+
 // Make test request
 $('#test').click(function() {
 
