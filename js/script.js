@@ -31,7 +31,7 @@ var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}
     accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
 });
 
-//Geocoder
+// Geocoder
 var osmGeocoder = new L.Control.Geocoder({
     collapsed: true,
     position: 'topleft',
@@ -39,9 +39,7 @@ var osmGeocoder = new L.Control.Geocoder({
     title: 'Suche'
 }).addTo(map);
 
-// Default projection to convert from
-//proj4.defs('EPSG:25832','+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
-
+// Default projections to convert from/to
 proj4.defs([
     [
       'EPSG:4326',
@@ -52,22 +50,42 @@ proj4.defs([
     ]
 ]);
 
+// Global Variables
+var status = 'status'; // status of request
+var geoJson = null; // geojson data
+var bbox = null; // current bounding box
+var wegeLayer = L.Proj.geoJson(false, {
+    onEachFeature: onclick
+}).addTo(map); // layer to store geojson data
+
 /// 
-/// REQUEST
+/// REQUEST TO CATEGORIZE FOR THE FIRST TIME
 ///
 
-// Read request file template
-//var requestFile = "src/request4_store.xml";
-//var requestHttp = new JKL.ParseXML.Text(requestFile);
-//var requestData = requestHttp.parse();
+// VARIABLES
 // WPS Url
 var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
-// Empty variables to store request information
-var status = 'status';
-var geoJson = null;
-var bbox = null;
-var wegeLayer = L.Proj.geoJson(false, {onEachFeature: onclick}).addTo(map);
+// Layer Styles
+var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
 
+// TRIGGER
+// When button is clicked, categorize streets
+$('#request-exe').click(function() {
+    // Request file for NEW categorization
+    var requestFile = "src/request4_store.xml";
+    // Get current bounds of the map
+    var bounds = map.getBounds();
+    // Calculate bounding box 
+    getBbox(bounds);
+    // Set features to false because it's a new request, so we're not
+    // sending any features
+    var features = false;
+    // Call function to make request
+    completeRequest(requestFile, bbox, features);
+})
+
+// FUNCTIONS
+// Function to calculate bounding box
 function getBbox(bounds) {
     /// Calculate map bounding box ///
     //var bounds = map.getBounds();
@@ -85,41 +103,26 @@ function getBbox(bounds) {
     var swLatProj = swCornerProj.y.toFixed(1);
     var neLngProj = neCornerProj.x.toFixed(1);
     var neLatProj = neCornerProj.y.toFixed(1);
-    // Final bbox
-    //var bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
+    // Final bbox (write it on global variable)
     bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
-    
-    //return bbox;
 }
-
-// When button is clicked, make request
-$('#request-exe').click(function() {
-
-    var requestFile = "src/request4_store.xml";
-    var bounds = map.getBounds();
-    //var bbox = getBbox(bounds);
-    getBbox(bounds);
-    var features = false;
-    completeRequest(requestFile, bbox, features);
-
-})
 
 // Function to make whole Request
 function completeRequest(requestFile, features) {
-
+    // Variable to save when request started
+    // to calculate how long it took later
     var t0 = performance.now()
-
-    // First clear variables, in case an old request was made
+    
+    // First clear global variables, in case an old request was made
     status = 'status';
     geoJson = null;
     wegeLayer.clearLayers();
-
+    // Read Request File
     var requestHttp = new JKL.ParseXML.Text(requestFile);
     var requestData = requestHttp.parse();
-
     // Replace bounding boxes
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
-
+    // If we are sending features, add them too
     if (features) {
         console.log('sending features');
         sendRequest = sendRequest.replace(/hier die editierten Ergebnisdaten im JSON-Format/g, features);
@@ -127,12 +130,13 @@ function completeRequest(requestFile, features) {
         console.log('getting features');
     }
 
+    // Make Request
     var ajax = $.ajax({
         type: 'POST',
         url: requestUrl,
         data: sendRequest,
         dataType: 'text',
-        success : function (response) {
+        success: function (response) {
             // Get status url from the response
             var statusUrl = response.split('statusLocation="').pop().split('"')[0];
             // Check status every X seconds, until it is succeeded
@@ -141,23 +145,22 @@ function completeRequest(requestFile, features) {
             }
             // When succeeded, check if features are in the response or in a link
             if (status.includes('href=')) {
-
-                var t1 = performance.now();
-                console.log("Call to load roads took " + ((t1 - t0)/1000) + " seconds.");
-
                 // If link, get Url
                 var geojsonUrl = status.split('href="').pop().split('"')[0];
-                // Request features and add to 
+                // Request features and add to layer
                 getGeojson(geojsonUrl);
                 addGeojson();
-
             } else {
                 // If they're in response, parse and add to layer
                 var statusFeatures = status.split('<![CDATA[').pop().split(']]>')[0];
                 geoJson = JSON.parse(statusFeatures);
                 addGeojson();
             }
+            // Log how long the request took
+            var t1 = performance.now();
+            console.log("Call to load roads took " + ((t1 - t0)/1000) + " seconds.");
         },
+        // If error, show on console
         error: function (xhr, ajaxOptions, thrownError) {
             console.log(xhr.status);
             console.log(thrownError);
@@ -177,6 +180,7 @@ function getStatus(url) {
           answer = response;
       }
     });
+    // Write status on global variable
     status = answer;
 };
 
@@ -192,16 +196,17 @@ function getGeojson(url) {
           answer = response;
       }
     });
+    // Write geojson on global variable
     geoJson = answer;
     console.log(geoJson);
 };
 
 // Function to add result features into map
 function addGeojson(url) {
-
-    // Add features to map
+    // Add features to layer
     wegeLayer.addData(geoJson);
-
+    console.log(wegeLayer);
+    // Style features according to category
     wegeLayer.eachLayer(function(feature) {
         // Style features
         var type = feature['feature']['properties']['WEGKAT'];
@@ -215,20 +220,46 @@ function addGeojson(url) {
         feature['feature']['properties']['zus-neue'] = null;
         feature['feature']['properties']['selected'] = false;
     });
-
     // Show Layer Panel
     document.getElementById("layer-control").style.display = "block";
 }
 
-// Layer Styles
-var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e': '#153dcf', 'f':'#f343eb', 'i': '#51ad37'};
-
 /// 
-/// RECALCULATION
+/// REQUEST TO RE-CATEGORIZE
 ///
 
+// TRIGGER
+// When button is clicked, re-categorize streets
+$('#recalculate').click(function() {
+    // Change attributes
+    wegeLayer.eachLayer(function(feature) {
+        var properties = feature['feature']['properties'];
+        properties['selected'] = false;
+        properties['wdm-or'] = properties['wdm'];
+        properties['zus-or'] = properties['zus'];
+        properties['wdm'] = properties['wdm-neue'];
+        properties['zus'] = properties['zus-neue'];
+    });
+    // Save layer as geojson
+    var features = wegeLayer.toGeoJSON();
+    // Reproject coordinates
+    reprojGeojson(features);
+    // Stringify
+    var featuresString = JSON.stringify(features);
+    // Request file for re-categorization
+    var requestFile = "src/request4_store_edited.xml";
+    // Get bounds of layer
+    var bounds = wegeLayer.getBounds();
+    // Calculate bounding box 
+    getBbox(bounds);
+    // Make request
+    completeRequest(requestFile, featuresString)
+});
+
+// FUNCTIONS
+// Function to reproject geojson
 function reprojGeojson(Geojson) {
-    //Projection Source and Destination
+    // Projection Source and Destination
     var source = new proj4.Proj('EPSG:4326');
     var dest = new proj4.Proj('EPSG:25832');
     features = Geojson.features;
@@ -239,96 +270,32 @@ function reprojGeojson(Geojson) {
           if (Array.isArray(coordList[0])) {
             for (var k = 0; k < coordList.length; k++) {
               var coordPair = Geojson.features[i].geometry.coordinates[j][k];
-              //create point
+              // Create point
               var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
               var ptRproj = proj4(source, dest, pt);
               var coordRproj = [ptRproj.x, ptRproj.y];
-              //replace original coordinate in the geojson
+              // Replace original coordinate in the geojson
               Geojson.features[i].geometry.coordinates[j][k] = coordRproj;
             };
           } else {
             var coordPair = Geojson.features[i].geometry.coordinates[j];
-            //create point
+            // Create point
             var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
             var ptRproj = proj4(source, dest, pt);
             var coordRproj = [ptRproj.x, ptRproj.y];
-            //replace original coordinate in the geojson
+            // Replace original coordinate in the geojson
             Geojson.features[i].geometry.coordinates[j] = coordRproj;
           }
         }
     }
 };
 
-$('#recalculate').click(function() {
-    var orAttr = ["land", 
-        "modellart", 
-        "objart", 
-        "objart_txt", 
-        "objid", 
-        "hdu_x", 
-        "fdv_x", 
-        "beginn", 
-        "ende",
-        "objart_z",
-        "objid_z",
-        "fdv_z_x",
-        "bdi",
-        "bdu",
-        "bez",
-        "bfs",
-        "brf",
-        "brv",
-        "fkt",
-        "fsz",
-        "ftr",
-        "ibd",
-        "nam",
-        "ofm",
-        "sts",
-        "wdm",
-        "znm",
-        "zus",
-    ];
-    // Change attributes
-    wegeLayer.eachLayer(function(feature) {
-        var properties = feature['feature']['properties'];
-        properties['selected'] = false;
-        //properties['wdm-or'] = properties['wdm'];
-        //properties['zus-or'] = properties['zus'];
-        properties['wdm'] = properties['wdm-neue'];
-        properties['zus'] = properties['zus-neue'];
-        
-        for (var key in properties) {
-            if (orAttr.includes(key)) {
-            } else {
-                delete properties[key];
-            }
-        }
-        
-    });
-    // Save layer as geojson
-    var features = wegeLayer.toGeoJSON();
-    console.log(features);
-    //console.log(features);
-    //features["crs"] = { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }
-    //features["name"] = "ver01_1";
-    // Reproject coordinates
-    reprojGeojson(features);
-    // Stringify
-    var featuresString = JSON.stringify(features);
-    var requestFile = "src/request4_store_edited.xml";
-    var bounds = wegeLayer.getBounds();
-    //var bbox = getBbox(bounds);
-    completeRequest(requestFile, featuresString)
-
-});
-
 /// 
 /// ATTRIBUTE TABELLE
 ///
 
-// Show attributes on click
-
+// VARIABLES
+// Dictionary of WDM Values
 var wdmValues = {
     null: " - ",
     "1301": "Bundesautobahn",
@@ -339,13 +306,14 @@ var wdmValues = {
     "9997": "Attribut trifft nicht zu",
     "9999": "Sonstiges",
 }
-
+// Dictionary of ZUS Values
 var zusValues = {
     null: " - ",
     "2100": "Außer Betrieb, stillgelegt, verlassen",
     "4000": "Im Bau"
 }
 
+// FUNCTIONS
 // Onclick function
 function onclick(feature, layer) {
     layer.on({
@@ -354,8 +322,9 @@ function onclick(feature, layer) {
 }
 // Add atributes function
 function attributes(e) {
+    // Avoid that click on street activates click on map
     L.DomEvent.stopPropagation(e);
-    //First reset style of all features
+    // First reset style of all features
     wegeLayer.eachLayer(function(feature) {
         feature.setStyle({
             weight: 2,
@@ -373,18 +342,24 @@ function attributes(e) {
     document.getElementById("tabelle").style.display = "block";
     // Then fill attribute table
     // Attributes that can't be changed
+    // Select all table tags
     var entries = document.querySelectorAll("td");
+    // Loop
     for (var i in entries) {
         var row = entries[i];
+        // If row has an id
         if (row.id != "") {
+            // If it is WDM or ZUS get value from dictionary
             if ((row.id == "wdm") || (row.id == "zus")) {
                 var value = feature['feature']['properties'][row.id];
                 var values = row.id + "Values";
                 row.innerHTML = window[values][value];
+                // If it's length, round it
             } else if (row.id == "LAENGE") {
                 var laenge = feature['feature']['properties'][row.id];
                 var rounded = laenge.toFixed(2);
                 row.innerHTML = rounded;
+                // Any other value, get from feature properties
             } else {
                 var value = feature['feature']['properties'][row.id];
                 if (value) {
@@ -535,7 +510,7 @@ var json = (function() {
     $.ajax({
       'async': false,
       'global': false,
-      'url': "data/layers-4326.geojson",
+      'url': "data/layers.geojson",
       'dataType': "json",
       'success': function(data) {
           json = data;
