@@ -13,6 +13,8 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    <!-- L Sync -->
+    <script type="text/javascript" src="src/L.Map.Sync.js"></script>
     <!-- Proj4 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.4.3/proj4.js"></script>
     <script src="src/proj4leaflet.js"></script>
@@ -22,7 +24,7 @@
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
     <script type="text/javascript" src="src/json2xml.js"></script>
 
-     <!-- -------Geocoder Search-Bar------->
+    <!-- -------Geocoder Search-Bar------->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
@@ -31,29 +33,13 @@
 <body>
 
     <div class="wrapper">
-
-        <div class="header" id="myHeader">
-            <div class="logo">
-                <img src="img/logo.png">
-            </div>
-            <nav class="links">
-                <ul class="nav">
-                    <li><a href="#home">Home Button</a></li>
-                    <li><a href="#ergebnisse">Ergebnisse</a></li>
-                    <li><a href="#analyse">Analyse</a></li>
-                    <li><a href="#grundlagen">Grundlagen</a></li>
-                    <li><a href="#hintergrund">Hintergrund</a></li>
-                    <li><a href="#kontakt">Kontakt</a></li>
-                </ul>
-            </div>
-        </div>
-
+        <!--
         <div class="sidebar">
 
             <h6>Wirtschaftswege - Analyse</h6>
 
             <div id="sidebar-content">
-                <!--<a href="#test" id="test">Test</a>-->
+                <a href="#test" id="test">Test</a>
                 <p>Zoomen Sie auf den gewünschten Bereich</p>
                 <button class="button" id="request-exe">Wege Kategorisieren</button>
                 <p>Klicken Sie auf einen Weg, um seine Attribute zu ändern</p>
@@ -65,7 +51,7 @@
                 <span class="slider round"></span>Base Layer Toggle
             </label>
             
-            <!-- Attribut Tabelle -->
+            
             <div id="tabelle" style="display: none">
                 <h6>Attribut Tabelle</h6>
                 <table id="attributes">
@@ -140,7 +126,7 @@
                 </table>
             </div>
 
-            <!-- Layer Control Panel -->
+            
             <div id="layer-control" style="display: none">
                 <h6>Wege Kategorien</h6>
                 <ul>
@@ -154,9 +140,16 @@
                 </ul>
             </div>
             
-        </div>
+        </div>-->
 
         <div id="map"></div>
+        <div id="map-edit"></div>
+
+        <div id="footer">
+            <button class="button" id="request-exe">Wege Kategorisieren</button>
+            <button class="button" id="recalculate">Neu Kategorisieren</button>
+            <button class="button" id="hide">IST ausblenden</button>
+        </div>
 
     </div>
 

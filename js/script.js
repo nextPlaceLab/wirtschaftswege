@@ -2,8 +2,12 @@
 /// MAP
 ///
 
-// Initiate map
+// Initiate maps
 var map = L.map('map', {
+    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
+}).setView([52.01799,9.03725], 13);
+
+var mapEdit = L.map('map-edit', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
 
@@ -20,6 +24,18 @@ var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop",
     maxZoom: 22,
     minZoom: 6,
 }).addTo(map);
+
+var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+    layers: 'nw_dop_rgb',
+    format: 'image/png',
+    version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+}).addTo(mapEdit);
 
 // Set up OSM tile layer 
 var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -39,6 +55,10 @@ var osmGeocoder = new L.Control.Geocoder({
     title: 'Suche'
 }).addTo(map);
 
+// Synchronize maps
+mapEdit.sync(map);
+map.sync(mapEdit);
+
 // Default projections to convert from/to
 proj4.defs([
     [
@@ -57,6 +77,26 @@ var bbox = null; // current bounding box
 var wegeLayer = L.Proj.geoJson(false, {
     onEachFeature: onclick
 }).addTo(map); // layer to store geojson data
+var showIst = true;
+
+// Toggle maps
+$('#hide').click(function() {
+    var mapDiv = document.getElementById('map');
+    var mapEditDiv = document.getElementById('map-edit');
+    if (mapDiv.style.display == 'none') {
+        mapDiv.style.display = 'block';
+        mapEditDiv.style.width = '50%';
+        mapEditDiv.style.marginLeft = '50%';
+        mapEdit.invalidateSize();
+        document.getElementById('hide').innerHTML = "IST ausblenden";
+    } else {
+        mapDiv.style.display = 'none';
+        mapEditDiv.style.width = '100%';
+        mapEditDiv.style.marginLeft = '0%';
+        mapEdit.invalidateSize();
+        document.getElementById('hide').innerHTML = "IST zeigen";
+    }
+});
 
 /// 
 /// REQUEST TO CATEGORIZE FOR THE FIRST TIME

@@ -10,27 +10,42 @@ a {
 }
 
 body {
-    margin: 0;
-    font-family: Poppins;
-    height: 100%;
-    color: var(--text);
+  margin: 0;
+  font-family: Poppins;
+  height: 100%;
+  color: var(--text);
+  position: relative;
 }
 
 .wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  display: block;
+  overflow: hidden;
 }
 
-.header {
-    height: 100px;
-    position: fixed;
-    width: 100%;
-    background: var(--background);
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
+#map {
+  position: fixed;           
+  height: 93vh;
+  width: 50%;
+  display: block;
+}
+
+#map-edit {
+  position: fixed;
+  margin-left: 50%;           
+  height: 93vh;
+  width: 50%;
+  display: block;
+}
+
+#footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 7vh;
+  align-items: center;
 }
 
 .links {
@@ -85,15 +100,6 @@ body {
     z-index: -1;
 }
 
-#map {
-    position: fixed;            
-    margin-left: 25%;
-    margin-top: 100px;
-    height: 100%;
-    width: 100%;
-    z-index: -1;
-}
-
 ul {
     list-style-type: none;
     margin: 0;
@@ -131,20 +137,16 @@ p {
 }
 
 .button {
-  width: 100%;
   background-color: #ccc;
   border: none;
   color: white;
-  padding: 10px 0px;
+  padding: 5px 5px;
   text-align: center;
   text-decoration: none;
-  float: left;
   font-family: "Quicksand";
-  font-size: 16px;
+  font-size: 14px;
   transition-duration: 0.2s;
   border-radius: 4px;
-  margin-bottom: 20px;
-  margin-top: 20px;
 }
 
 .button:hover:enabled {
