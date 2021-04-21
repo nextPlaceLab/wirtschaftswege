@@ -18,6 +18,8 @@
     <script src="src/proj4leaflet.js"></script>
     <!-- Jquery -->
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <!-- Jquery UI-->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <!-- XML Parser Library -->
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
     <script type="text/javascript" src="src/json2xml.js"></script>
@@ -26,9 +28,10 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v4.js"></script>
 
-    <!-- Layers File -->
-    <link rel="layers" type="application/json" href="data/layers.geojson">
+
 
 </head>
 
@@ -59,7 +62,9 @@
             <div id="sidebar-content">
                 <!--<a href="#test" id="test">Test</a>-->
                 <p>Zoomen Sie auf den gewünschten Bereich</p>
-                <button class="button" id="request-exe">Wege Kategorisieren</button> 
+                <button class="button" id="request-exe">Wege Kategorisieren</button>
+                <p>Klicken Sie auf einen Weg, um seine Attribute zu ändern</p>
+                <button class="button" id="recalculate">Neu Kategorisieren</button> 
             </div>
 
             <label class="switch">
@@ -67,20 +72,18 @@
                 <span class="slider round"></span>Base Layer Toggle
             </label>
             
-            <!-- Layer Control Panel -->
-            <div id="layer-control" style="display: none">
-                <h6>Wege Kategorien</h6>
-                <ul>
-                    <li><input type="checkbox" id="a" checked><span style="background: #d8000a;"></span>A_klassifiziert</li>
-                    <li><input type="checkbox" id="b" checked><span style="background: #03bebe;"></span>B_multifunktionaler Verbindungsweg</li>
-                    <li><input type="checkbox" id="c" checked><span style="background: #ffb41d;"></span>C_Hauptwirtschaftsweg</li>
-                    <li><input type="checkbox" id="d" checked><span style="background: #51ad37;"></span>D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</li>
-                    <li><input type="checkbox" id="e" checked><span style="background: #153dcf;"></span>E_untergeordneter Erschließungsweg mit luf Verkehr</li>
-                    <li><input type="checkbox" id="f" checked><span style="background: #f343eb;"></span>F_Einzelerschließung kaum luf Verkehr</li>
-                    <li><input type="checkbox" id="i" checked><span style="background: #51ad37;"></span>I_Rad-, Reit-, Fußweg</li>
-                </ul>
-            </div>
+            <button class="button" id="sumup">Sumup</button>
             
+            <!-- Add 2 buttons -->
+            <button onclick="update(data1)">Variable 1</button>
+            <button onclick="update(data2)">Variable 2</button>
+
+            <!-- Create a div where the graph will take place -->
+            <div id="my_dataviz"></div>
+
+
+
+
             <!-- Attribut Tabelle -->
             <div id="tabelle" style="display: none">
                 <h6>Attribut Tabelle</h6>
@@ -154,11 +157,29 @@
                         </select></td>
                     </tr>
                 </table>
+  
+
             </div>
+
+            <!-- Layer Control Panel -->
+            <div id="layer-control" style="display: none">
+                <h6>Wege Kategorien</h6>
+                <ul>
+                    <li><input type="checkbox" id="a" checked><span style="background: #d8000a;"></span>A_klassifiziert</li>
+                    <li><input type="checkbox" id="b" checked><span style="background: #03bebe;"></span>B_multifunktionaler Verbindungsweg</li>
+                    <li><input type="checkbox" id="c" checked><span style="background: #ffb41d;"></span>C_Hauptwirtschaftsweg</li>
+                    <li><input type="checkbox" id="d" checked><span style="background: #51ad37;"></span>D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</li>
+                    <li><input type="checkbox" id="e" checked><span style="background: #153dcf;"></span>E_untergeordneter Erschließungsweg mit luf Verkehr</li>
+                    <li><input type="checkbox" id="f" checked><span style="background: #f343eb;"></span>F_Einzelerschließung kaum luf Verkehr</li>
+                    <li><input type="checkbox" id="i" checked><span style="background: #51ad37;"></span>I_Rad-, Reit-, Fußweg</li>
+                </ul>
+            </div>
+            
         </div>
 
         <div id="map"></div>
 
+        
     </div>
 
     <!-- My Scripts -->
