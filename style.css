@@ -1,8 +1,8 @@
 :root {
-    --text: #777777;
-    --background: white;
-    --border: #ddd;
-    --color1: blue;
+  --text: #777777;
+  --background: white;
+  --border: #ddd;
+  --color1: blue;
 }
 
 a {
@@ -25,14 +25,28 @@ body {
   overflow: hidden;
 }
 
-#map {
+#firstPage {
   position: fixed;           
   height: 93vh;
   width: 50%;
   display: block;
 }
 
-#map-edit {
+#tabelle {
+  position: fixed;           
+  height: 93vh;
+  width: 50%;
+  display: block;
+}
+
+#map-ist {
+  position: fixed;           
+  height: 93vh;
+  width: 50%;
+  display: block;
+}
+
+#map {
   position: fixed;
   margin-left: 50%;           
   height: 93vh;
@@ -49,55 +63,55 @@ body {
 }
 
 .links {
-    margin-left: 20px;
-    float: left;
+  margin-left: 20px;
+  float: left;
 }
 
 .links ul, li {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .links li {
-    display: inline-block;
-    margin: 1.4em 1em 1em 1em;
+  display: inline-block;
+  margin: 1.4em 1em 1em 1em;
 }
 
 .links a {
-    color: var(--text);
-    text-decoration: none;
-    font-size: 14px;
-    text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  text-transform: uppercase;
 }
 
 .links a:hover {
-    color: var(--color1);
-    vertical-align: center;
+  color: var(--color1);
+  vertical-align: center;
 }
 
 .logo {
-    width: 25%;
-    float: left;
+  width: 25%;
+  float: left;
 }
 
 .logo img {
-    max-width: 100%;
-    float: left;
-    margin: 0 10px 0 0;
+  max-width: 100%;
+  float: left;
+  margin: 0 10px 0 0;
 }
 
 .sidebar {
-    position: fixed;
-    width: 25%;
-    background-color: var(--background);
-    border-right: 1px solid var(--border);
-    font-size: 21px;
-    overflow-y: scroll;
-    top: 0;
-    bottom: 0;
-    margin-top: 100px;
-    border-top: 1px solid var(--border);
-    z-index: -1;
+  position: fixed;
+  width: 25%;
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+  font-size: 21px;
+  overflow-y: scroll;
+  top: 0;
+  bottom: 0;
+  margin-top: 100px;
+  border-top: 1px solid var(--border);
+  z-index: -1;
 }
 
 ul {
@@ -113,17 +127,17 @@ ul {
   }
 
 li {
-    padding: 3px 0;
-    font-size: 11px;
+  padding: 3px 0;
+  font-size: 11px;
 }
 
 h6 {
-    margin-bottom: 0;
-    margin-top: 0;
-    padding: 10px;
-    text-decoration: none;
-    text-transform: uppercase;
-    font-weight: 400;
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: 10px;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 400;
 }
 
 p {

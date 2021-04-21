@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><wps:Execute version="1.0.0" service="WPS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wps/1.0.0" xmlns:wfs="http://www.opengis.net/wfs" xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">
+  <ows:Identifier>wwk_k</ows:Identifier>
+  <wps:DataInputs>
+    <wps:Input>
+      <ows:Identifier>vg_gemarkung</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Avg_gemarkung&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>biomasse</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Abiomasse&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>deponiegas</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Adeponiegas&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>freiflaechen_PV</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Afreiflaechen_PV&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>grubengas</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Agrubengas&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>klaergas</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aklaergas&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>wasserkraft</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Awasserkraft&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>nrw_radverkehrsnetz</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Anrw_radverkehrsnetz&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>nutzung_flurstueck</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Anutzung_flurstuecke&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>windenergie</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Awindenergie&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>	
+    <wps:Input>
+      <ows:Identifier>rte01_l</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Arte01_l&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>sie01_f</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Asie01_f&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>swd01_p</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aswd01_p&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>swd02_p</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aswd02_p&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>swd03_p</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aswd03_p&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>ver01_l</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aver01_l&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>ver02_l</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aver02_l&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>gebaeude</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Agebaeude_6_gemeinden&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>selektion</ows:Identifier>
+      <wps:Data>
+        <wps:ComplexData mimeType="application/json">
+hier das Polygon als Json
+		</wps:ComplexData>
+      </wps:Data>
+    </wps:Input>
+  </wps:DataInputs>
+  <wps:ResponseForm>
+	<wps:ResponseDocument storeExecuteResponse="true" status="true">
+	  <wps:Output asReference="true">
+		<ows:Identifier>wegenetz_kat</ows:Identifier>
+	  </wps:Output>
+    </wps:ResponseDocument>
+  </wps:ResponseForm>
+</wps:Execute>

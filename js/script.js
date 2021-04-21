@@ -1,19 +1,33 @@
 /// 
-/// MAP
+/// MAPS & GLOBAL VARIABLES
 ///
 
 // Initiate maps
+var mapIst = L.map('map-ist', {
+    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
+}).setView([52.01799,9.03725], 13);
+
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
 
-var mapEdit = L.map('map-edit', {
-    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
-}).setView([52.01799,9.03725], 13);
+// Global Variables
+var status = 'status'; // status of request
+var geoJson = null; // geojson data
+var bbox = null; // current bounding box
+var gemeinde = null;
+var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
+var wegeLayer = L.Proj.geoJson(false, {
+    onEachFeature: showPopupEdit
+}).addTo(map); // layer to store geojson data
+var istLayer = L.Proj.geoJson(false, {
+    onEachFeature: showPopup
+}).addTo(mapIst);
+var wegSelected = null;
 
-// Set up Base-Layers
+// Set up Base-Layers for each Map
 // Set up Luftbild Layer
-var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
     layers: 'nw_dop_rgb',
     format: 'image/png',
     version: '1.1.0',
@@ -25,7 +39,7 @@ var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop",
     minZoom: 6,
 }).addTo(map);
 
-var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+var NRW_Luftbild_MapIst = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
     layers: 'nw_dop_rgb',
     format: 'image/png',
     version: '1.1.0',
@@ -35,12 +49,21 @@ var NRW_Luftbild = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop",
     tiled: true,
     maxZoom: 22,
     minZoom: 6,
-}).addTo(mapEdit);
+}).addTo(mapIst);
 
 // Set up OSM tile layer 
-var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+var OSM_Layer_Map = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
+    maxZoom: 22,
+    id: 'mapbox/light-v10',
+    tileSize: 512,
+    zoomOffset: -1,
+    accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
+});
+
+var OSM_Layer_MapIst = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 22,
     id: 'mapbox/light-v10',
     tileSize: 512,
     zoomOffset: -1,
@@ -55,10 +78,6 @@ var osmGeocoder = new L.Control.Geocoder({
     title: 'Suche'
 }).addTo(map);
 
-// Synchronize maps
-mapEdit.sync(map);
-map.sync(mapEdit);
-
 // Default projections to convert from/to
 proj4.defs([
     [
@@ -70,33 +89,129 @@ proj4.defs([
     ]
 ]);
 
-// Global Variables
-var status = 'status'; // status of request
-var geoJson = null; // geojson data
-var bbox = null; // current bounding box
-var wegeLayer = L.Proj.geoJson(false, {
-    onEachFeature: onclick
-}).addTo(map); // layer to store geojson data
-var showIst = true;
+// Add gemeinde from file
+var gemeindeLayer = L.Proj.geoJson().addTo(map);
+var gemeindeLayerIst = L.Proj.geoJson().addTo(mapIst);
+var json = (function() {
+    var json = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "data/gemeinde.geojson",
+      'dataType': "json",
+      'success': function(data) {
+          json = data;
+      }
+    });
+    gemeinde = json;
+    gemeindeLayer.addData(json);
+    gemeindeLayerIst.addData(json);
+    // Style
+    gemeindeLayer.eachLayer(function(feat) {
+        feat.setStyle(
+            {
+                fillColor: 'white',
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0
+            }
+        )
+    })
+    gemeindeLayerIst.eachLayer(function(feat) {
+        feat.setStyle(
+            {
+                fillColor: 'white',
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0
+            }
+        )
+    })
+    // Zoom in
+    map.fitBounds(gemeindeLayer.getBounds());
+})();
 
-// Toggle maps
+// When a gemeinde is chosen
+function chooseGemeinde(e) {
+    selektion.features = [];
+    gemeindeLayer.eachLayer(function(feat) {
+        if (feat.feature.properties.name == e.value) {
+            feat.setStyle(show());
+            var bounds = feat.getBounds();
+            // Calculate bounding box 
+            getBbox(bounds);
+            map.fitBounds(bounds);
+        } else {
+            feat.setStyle(hide());
+        }
+    })
+    var features = gemeinde.features;
+    for (var i = 0; i < features.length; i++) {
+        if (features[i]["properties"]["name"] == e.value) {
+            selektion.features.push(features[i]);
+        }
+    }
+}
+
+// Toggle IST Map
 $('#hide').click(function() {
+    var mapIstDiv = document.getElementById('map-ist');
     var mapDiv = document.getElementById('map');
-    var mapEditDiv = document.getElementById('map-edit');
-    if (mapDiv.style.display == 'none') {
-        mapDiv.style.display = 'block';
-        mapEditDiv.style.width = '50%';
-        mapEditDiv.style.marginLeft = '50%';
-        mapEdit.invalidateSize();
+    if (mapIstDiv.style.display == 'none') {
+        mapIstDiv.style.display = 'block';
+        mapDiv.style.width = '50%';
+        mapDiv.style.marginLeft = '50%';
+        map.invalidateSize();
         document.getElementById('hide').innerHTML = "IST ausblenden";
     } else {
-        mapDiv.style.display = 'none';
-        mapEditDiv.style.width = '100%';
-        mapEditDiv.style.marginLeft = '0%';
-        mapEdit.invalidateSize();
+        mapIstDiv.style.display = 'none';
+        mapDiv.style.width = '100%';
+        mapDiv.style.marginLeft = '0%';
+        map.invalidateSize();
         document.getElementById('hide').innerHTML = "IST zeigen";
     }
 });
+
+// Workaround for keeping streets from moving when map is dragged
+// that happens because of the synchronization ¯\_(ツ)_/¯
+map.on("dragend", function(e) {
+    var features = wegeLayer.toGeoJSON();
+    wegeLayer.clearLayers();
+    wegeLayer.addData(features);
+    wegeLayer.eachLayer(function(feature) {
+        // Style features
+        var type = feature['feature']['properties']['WEGKAT'];
+        feature.setStyle({
+            color: styles[type],
+            weight: 2,
+            opacity: 1,
+    })
+})
+})
+
+// Load test data
+$('#test').click(function() {
+    // Add layers from file
+    var json = (function() {
+        var json = null;
+        $.ajax({
+        'async': false,
+        'global': false,
+        'url': "data/leopoldshoehe.geojson",
+        'dataType': "json",
+        'success': function(data) {
+            json = data;
+        }
+        });
+        geoJson = json;
+        addGeojson();
+        createIst();
+    })();
+})
 
 /// 
 /// REQUEST TO CATEGORIZE FOR THE FIRST TIME
@@ -112,23 +227,48 @@ var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#51ad37', 'e
 // When button is clicked, categorize streets
 $('#request-exe').click(function() {
     // Request file for NEW categorization
-    var requestFile = "src/request4_store.xml";
+    //var requestFile = "src/request4_store.xml";
+    var requestFile = "src/request4_store_selektion_text.xml";
     // Get current bounds of the map
-    var bounds = map.getBounds();
+    //var bounds = map.getBounds();
     // Calculate bounding box 
-    getBbox(bounds);
+    //getBbox(bounds);
     // Set features to false because it's a new request, so we're not
     // sending any features
     var features = false;
     // Call function to make request
-    completeRequest(requestFile, bbox, features);
+    completeRequest(requestFile, features);
 })
+
+function createIst() {
+    document.getElementById('firstPage').style.display = 'none';
+    document.getElementById('map-ist').style.display = 'block';
+    mapIst.invalidateSize();
+    // Add features to layer
+    istLayer.addData(geoJson);
+    // Style features according to category
+    istLayer.eachLayer(function(feature) {
+        // Style features
+        var type = feature['feature']['properties']['WEGKAT'];
+        feature.setStyle({
+            color: styles[type],
+            weight: 2,
+            opacity: 1,
+        })
+    })
+    mapIst.fitBounds(istLayer.getBounds());
+    map.sync(mapIst);
+    mapIst.dragging.disable();
+    mapIst.touchZoom.disable();
+    mapIst.doubleClickZoom.disable();
+    mapIst.scrollWheelZoom.disable();
+    mapIst.keyboard.disable();
+}
 
 // FUNCTIONS
 // Function to calculate bounding box
 function getBbox(bounds) {
     /// Calculate map bounding box ///
-    //var bounds = map.getBounds();
     var swLng = bounds.getSouthWest().lng;
     var swLat = bounds.getSouthWest().lat;
     var neLng = bounds.getNorthEast().lng;
@@ -162,6 +302,9 @@ function completeRequest(requestFile, features) {
     var requestData = requestHttp.parse();
     // Replace bounding boxes
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
+    // Add gemeinde grenzen
+    var grenzen = JSON.stringify(selektion);
+    sendRequest = sendRequest.replace(/hier das Polygon als Json/g, grenzen);
     // If we are sending features, add them too
     if (features) {
         console.log('sending features');
@@ -169,7 +312,7 @@ function completeRequest(requestFile, features) {
     } else {
         console.log('getting features');
     }
-
+    
     // Make Request
     var ajax = $.ajax({
         type: 'POST',
@@ -190,11 +333,17 @@ function completeRequest(requestFile, features) {
                 // Request features and add to layer
                 getGeojson(geojsonUrl);
                 addGeojson();
+                if (!features) {
+                    createIst();
+                }
             } else {
                 // If they're in response, parse and add to layer
                 var statusFeatures = status.split('<![CDATA[').pop().split(']]>')[0];
                 geoJson = JSON.parse(statusFeatures);
                 addGeojson();
+                if (!features) {
+                    createIst();
+                }
             }
             // Log how long the request took
             var t1 = performance.now();
@@ -206,6 +355,7 @@ function completeRequest(requestFile, features) {
             console.log(thrownError);
         }
     });
+    
 }
 
 // Function to ask for process status
@@ -245,7 +395,6 @@ function getGeojson(url) {
 function addGeojson(url) {
     // Add features to layer
     wegeLayer.addData(geoJson);
-    console.log(wegeLayer);
     // Style features according to category
     wegeLayer.eachLayer(function(feature) {
         // Style features
@@ -260,8 +409,7 @@ function addGeojson(url) {
         feature['feature']['properties']['zus-neue'] = null;
         feature['feature']['properties']['selected'] = false;
     });
-    // Show Layer Panel
-    document.getElementById("layer-control").style.display = "block";
+    map.fitBounds(wegeLayer.getBounds());
 }
 
 /// 
@@ -360,6 +508,136 @@ function onclick(feature, layer) {
         click: attributes
     });
 }
+
+// Function to show Popup with attribute (IST)
+var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+function showPopup(feature, layer) {
+    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+            <tr>\
+                <th scope="row">Straßenname: </th>\
+                <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Wegekategorie: </th>\
+                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Zukünftige Wegekat.: </th>\
+                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Abschnittslänge (m): </th>\
+                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Handlungsempfehlung: </th>\
+                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
+            </tr>\
+        </table>';
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
+
+// Function to show Popup with attribute (SOLL)
+function showPopupEdit(feature, layer) {
+    layer.on({
+        click: function() {
+            wegSelected = layer;
+        }
+    });
+    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+            <tr>\
+                <th scope="row">Straßenname: </th>\
+                <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Wegekategorie: </th>\
+                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Zukünftige Wegekat.: </th>\
+                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Abschnittslänge (m): </th>\
+                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
+            </tr>\
+            <tr>\
+                <th scope="row">Handlungsempfehlung: </th>\
+                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
+            </tr>\
+        </table>\
+        <br>\
+        <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
+
+// Edit attribute
+function editAttribute () {
+    console.log('clicked');
+    var feature = wegSelected;
+    var table = document.getElementById("tabelle");
+    if (table.style.display == 'none') {
+        // Hide IST Map or Resize SOLL Map
+        // And show attribut tabelle
+        var mapIstDiv = document.getElementById('map-ist');
+        var mapDiv = document.getElementById('map');
+        if (mapIstDiv.style.display == 'none') {
+            table.style.display = "block";
+        } else {
+            mapIstDiv.style.display = 'none';
+            mapDiv.style.width = '50%';
+            mapDiv.style.marginLeft = '50%';
+            map.invalidateSize();
+            table.style.display = "block";
+        }
+    }
+    // Then fill attribute table
+    // Attributes that can't be changed
+    // Select all table tags
+    var entries = document.querySelectorAll("td");
+    // Loop
+    for (var i in entries) {
+        var row = entries[i];
+        // If row has an id
+        if (row.id != "") {
+            // If it is WDM or ZUS get value from dictionary
+            if ((row.id == "wdm") || (row.id == "zus")) {
+                var value = feature['feature']['properties'][row.id];
+                var values = row.id + "Values";
+                row.innerHTML = window[values][value];
+                // If it's length, round it
+            } else if (row.id == "LAENGE") {
+                var laenge = feature['feature']['properties'][row.id];
+                var rounded = laenge.toFixed(2);
+                row.innerHTML = rounded;
+                // Any other value, get from feature properties
+            } else {
+                var value = feature['feature']['properties'][row.id];
+                if (value) {
+                    row.innerHTML = value;
+                } else {
+                    row.innerHTML = " - ";
+                }
+            }
+        }
+    }
+    // Changeable attributes
+    var wdmSelect = document.getElementById("wdm-neue");
+    var wdmValue = feature['feature']['properties']['wdm-neue'];
+    if (wdmValue) {
+        wdmSelect.value = wdmValue;
+    } else {
+        wdmSelect.value = "";
+    }
+    var zusSelect = document.getElementById("zus-neue");
+    var zusValue = feature['feature']['properties']['zus-neue'];
+    if (zusValue) {
+        zusSelect.value = zusValue;
+    } else {
+        zusSelect.value = "";
+    }
+};
+
 // Add atributes function
 function attributes(e) {
     // Avoid that click on street activates click on map
@@ -373,6 +651,7 @@ function attributes(e) {
     });
     // Then highlight clicked feature
     feature = e.target;
+    wegSelected = feature;
     feature.setStyle({
         weight: 5,
     });
@@ -544,22 +823,6 @@ window.addEventListener("load", function() {
 ///
 
 /*
-// Add layers from file
-var json = (function() {
-    var json = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "data/layers.geojson",
-      'dataType': "json",
-      'success': function(data) {
-          json = data;
-      }
-    });
-    return json;
-})();
-
-
 // Make test request
 $('#test').click(function() {
 
