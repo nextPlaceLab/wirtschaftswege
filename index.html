@@ -148,6 +148,7 @@
             <br>
             <button class="button" id="test">Test Daten Laden</button>
         </div>
+
         <!-- Attribute Tabelle zu Editieren -->
         <div id="tabelle" style="display: none">
 
@@ -155,48 +156,76 @@
             <table id="attributes">
                 <tr>
                     <td>ATTRIBUT</td>
-                    <td>WERT</td>
-                    <td>NEUER WERT</td>
+                    <td>IST</td>
+                    <td>SOLL</td>
                 </tr>
-                <tr>
-                    <td>Wegenummer:</td>
-                    <td id="STS"></td>
-                    <td> - </td>
-                </tr>
-                <tr>
-                    <td>Straßenname:</td>
-                    <td id="NAM"></td>
-                    <td> - </td>
-                </tr>
-                <tr>
-                    <td>Wegekategorie:</td>
-                    <td id="WEGKAT"></td>
-                    <td> - </td>
-                </tr>
-                <tr>
-                    <td>Alternative Wegekat.:</td>
-                    <td id="WEGKAT-ALT"></td>
-                    <td> - </td>
-                </tr>
-                <tr>
-                    <td>Zukünftige Wegekat.:</td>
-                    <td id="ZWEGKAT"></td>
-                    <td> - </td>
-                </tr>
-                <tr>
-                    <td>Abschnittslänge (m):</td>
+                <td>Abschnittslänge (m):</td>
                     <td id="LAENGE"></td>
                     <td> - </td>
+                <tr>
+                    <td>Funktion Landwirtschaft:</td>
+                    <td id="FKT_LW"></td>
+                    <td><select id="FKT_LW-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
                 </tr>
                 <tr>
-                    <td>Priorität:</td>
-                    <td id="PRIO"></td>
-                    <td> - </td>
+                    <td>Funktion Tourismus:</td>
+                    <td id="FKT_TFE"></td>
+                    <td><select id="FKT_TFE-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
                 </tr>
                 <tr>
-                    <td>Handlungsempfehlung:</td>
-                    <td id="HANDL"></td>
-                    <td> - </td>
+                    <td>Funktion Fahrrad:</td>
+                    <td id="FKT_RA"></td>
+                    <td><select id="FKT_RA-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Funktion Produktion EE:</td>
+                    <td id="FKT_PEE"></td>
+                    <td><select id="FKT_PEE-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Funktion Wandern:</td>
+                    <td id="FKT_WA"></td>
+                    <td><select id="FKT_WA-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Funktion Einzelinteresse:</td>
+                    <td id="FKT_EI"></td>
+                    <td><select id="FKT_EI-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1">Nutzung gelegentlich/saisonal</option>
+                        <option value="2">Nutzung häufig</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Nutzung:</td>
+                    <td id="art"></td>
+                    <td><select id="art-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="1103">Fußweg</option>
+                        <option value="1106">Radweg</option>
+                        <option value="1107">Reitweg</option>
+                        <option value="1110">Rad- und Fußweg</option>
+                    </select></td>
                 </tr>
                 <tr>
                     <td>Widmung:</td>
@@ -221,14 +250,52 @@
                         <option value="4000">Im Bau</option>
                     </select></td>
                 </tr>
+                <tr>
+                    <td>Handlungsempfehlung:</td>
+                    <td id="HANDL"></td>
+                    <td><select id="HANDL-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="a">Erhaltung wie Bestand (normale Unterhaltung)</option>
+                        <option value="b">den Unterbau einschließende Sanierung (gleiche Kategorie)</option>
+                        <option value="c">Umbau / andere Bauweise (veränderte Kategorie)</option>
+                        <option value="d">Rückbau / Aufhebung</option>
+                        <option value="e">Neubau (neue Trasse)</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Priorität:</td>
+                    <td id="PRIO"></td>
+                    <td><select id="PRIO-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="Kurzfristig">Kurzfristig</option>
+                        <option value="Mittelfristig">Mittelfristig</option>
+                        <option value="Langfristig">Langfristig</option>
+                    </select></td>
+                </tr>
+                <tr>
+                    <td>Zukünftige Unterhaltungspflicht:</td>
+                    <td id="ZUHPFL"></td>
+                    <td><select id="ZUHPFL-neue" onchange="changeAttribute(this)">
+                        <option value=""> - </option>
+                        <option value="Gemeinde">Gemeinde</option>
+                        <option value="Kreis">Kreis</option>
+                        <option value="Land">Land</option>
+                        <option value="Bundesrepublik Deutschland">Bundesrepublik Deutschland</option>
+                        <option value="Natürliche Personen des Privatrechts">Natürliche Personen des Privatrechts</option>
+                        <option value="Juristichen Personen des Privatrechts">Juristichen Personen des Privatrechts</option>
+                        <option value="Sonstige">Sonstige</option>
+                    </select></td>
+                </tr>
             </table>
 
             <button class="button" id="edit-confirm">Confirm</button>
             <button class="button" id="edit-cancel">Cancel</button>
 
         </div>
+
         <!-- IST Karte -->
         <div id="map-ist" style="display: none"></div>
+
         <!-- SOLL Karte -->
         <div id="map"></div>
 

@@ -208,6 +208,7 @@ $('#test').click(function() {
         }
         });
         geoJson = json;
+        console.log(geoJson);
         addGeojson();
         createIst();
     })();
