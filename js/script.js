@@ -408,6 +408,10 @@ function addGeojson(url) {
         // Add attributes for change
         feature['feature']['properties']['wdm-neue'] = null;
         feature['feature']['properties']['zus-neue'] = null;
+        feature['feature']['properties']['art-neue'] = null;
+        feature['feature']['properties']['HANDL-neue'] = null;
+        feature['feature']['properties']['PRIO-neue'] = null;
+        feature['feature']['properties']['ZUHPFL-neue'] = null;
         feature['feature']['properties']['selected'] = false;
     });
     map.fitBounds(wegeLayer.getBounds());
@@ -500,6 +504,45 @@ var zusValues = {
     null: " - ",
     "2100": "Außer Betrieb, stillgelegt, verlassen",
     "4000": "Im Bau"
+}
+// Dictionary of HANDL Values
+var HANDLValues = {
+    null: " - ",
+    "a": "Erhaltung wie Bestand (normale Unterhaltung)",
+    "b": "den Unterbau einschließende Sanierung (gleiche Kategorie)",
+    "c": "Umbau / andere Bauweise (veränderte Kategorie)",
+    "d": "Rückbau / Aufhebung",
+    "e": "Neubau (neue Trasse)"
+}
+// Dictionary of ART Values
+var ARTValues = {
+    null: " - ",
+    "1103": "Fußweg",
+    "1106": "Radweg",
+    "1107": "Reitweg",
+    "1110": "Rad- und Fußweg"
+}
+// Dictionary of other values
+var otherValues = {
+    null: " - ",
+    "1": "Nutzung gelegentlich/saisonal",
+    "2": "Nutzung häufig"
+}
+// Dictionary of PRIO Values
+var PRIOValues = {
+    "Kurzfristig": "Kurzfristig",
+    "Mittelfristig": "Mittelfristig",
+    "Langfristig": "Langfristig"
+}
+// Dictionary of ZUHPFL Values
+var ZUHPFLValues = {
+    "Gemeinde": "Gemeinde",
+    "Kreis": "Kreis",
+    "Land": "Land",
+    "Bundesrepublik Deutschland": "Bundesrepublik Deutschland",
+    "Natürliche Personen des Privatrechts": "Natürliche Personen des Privatrechts",
+    "Juristichen Personen des Privatrechts": "Juristichen Personen des Privatrechts",
+    "Sonstige": "Sonstige"
 }
 
 // FUNCTIONS
@@ -638,6 +681,52 @@ function editAttribute () {
         zusSelect.value = "";
     }
 };
+
+function editConfirm(e) {
+    // Loop through attribute table
+    var entries = document.querySelectorAll("td");
+    // Loop
+    for (var i in entries) {
+        var row = entries[i];
+        // If row has an id
+        if (row.id != "") {
+            // If it is WDM or ZUS get value from dictionary
+            if ((row.id == "wdm") || (row.id == "zus")) {
+                var value = feature['feature']['properties'][row.id];
+                var values = row.id + "Values";
+                row.innerHTML = window[values][value];
+                // If it's length, round it
+            } else if (row.id == "LAENGE") {
+                var laenge = feature['feature']['properties'][row.id];
+                var rounded = laenge.toFixed(2);
+                row.innerHTML = rounded;
+                // Any other value, get from feature properties
+            } else {
+                var value = feature['feature']['properties'][row.id];
+                if (value) {
+                    row.innerHTML = value;
+                } else {
+                    row.innerHTML = " - ";
+                }
+            }
+        }
+    }
+    // Changeable attributes
+    var wdmSelect = document.getElementById("wdm-neue");
+    var wdmValue = feature['feature']['properties']['wdm-neue'];
+    if (wdmValue) {
+        wdmSelect.value = wdmValue;
+    } else {
+        wdmSelect.value = "";
+    }
+    var zusSelect = document.getElementById("zus-neue");
+    var zusValue = feature['feature']['properties']['zus-neue'];
+    if (zusValue) {
+        zusSelect.value = zusValue;
+    } else {
+        zusSelect.value = "";
+    }
+}
 
 // Add atributes function
 function attributes(e) {
