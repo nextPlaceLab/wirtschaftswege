@@ -25,7 +25,8 @@
     <!-- XML Parser Library -->
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
     <script type="text/javascript" src="src/json2xml.js"></script>
-
+    <!-- FileSaver -->
+    <script type="text/javascript" src="src/FileSaver.js"></script>
     <!-- -------Geocoder Search-Bar------->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
@@ -49,6 +50,15 @@
 
         <!-- Gemeinde Selection / Kategoriesierung -->
         <div id="firstPage">
+            <h2>Über das Projekt</h2>
+            <p>Diese Website ist ein Ergebnis des Projekts "Digitales Wirtschaftswegekonzept" und wurde in Kooperation mit der LAG Nordlippe e.V. von der Technischen Hochschule Ostwestfalen-Lippe erstellt.</p>
+            <h2>Über nextPlace</h2>
+            <p>nextPlace ist ein Forschungsschwerpunkt an der Technischen Hochschule Ostwestfalen-Lippe. Der Forschungsschwerpunkt ordnet seine Projekte den folgenden Forschungsfeldern zu und baut dabei auf den Vorarbeiten der beteiligten Professoren auf:</p>
+            <p>- Geoinformationsysteme und Multi-Agenten-Simulation</p>
+            <p>- Mobilitätskonzepte unter Verwendung erneuerbare Energien</p>
+            <p>- Dynamische Änderung räumlicher Standortpotentiale</p>
+            <p>- User Experience und Interaction Design</p>
+            <br>
             <select id="gemeinde" onchange="chooseGemeinde(this)">
                 <option disabled selected value>Wählen Sie eine Gemeinde</option>
                 <option value="Barntrup">Barntrup</option>
@@ -69,9 +79,9 @@
         <!-- Attribute Tabelle zu Editieren -->
         <div id="tabelle" style="display: none">
 
-            <h6>Attribut Tabelle</h6>
+            <h2>Attribut Tabelle</h2>
 
-            <h6>IST Konzept</h6>
+            <h4>IST Konzept</h4>
 
             <table id="attributes-ist">
                 <tr>
@@ -85,9 +95,18 @@
                     <td> - </td>
                 </tr>
                 <tr>
+                    <td>Funktion:</td>
+                    <td id="FKT-ist"></td>
+                    <td><select id="FKT">
+                        <option value=""> - </option>
+                        <option value="5211">Hauptwirtschaftsweg</option>
+                        <option value="5212">Wirtschaftsweg</option>
+                    </select></td>
+                </tr>
+                <tr>
                     <td>Nutzung:</td>
-                    <td id="art"></td>
-                    <td><select id="art-neue" onchange="changeAttribute(this)">
+                    <td id="art-ist"></td>
+                    <td><select id="art">
                         <option value=""> - </option>
                         <option value="1103">Fußweg</option>
                         <option value="1106">Radweg</option>
@@ -97,8 +116,8 @@
                 </tr>
                 <tr>
                     <td>Widmung:</td>
-                    <td id="wdm"></td>
-                    <td><select id="wdm-neue" onchange="changeAttribute(this)">
+                    <td id="wdm-ist"></td>
+                    <td><select id="wdm">
                         <option value=""> - </option>
                         <option value="1301">Bundesautobahn</option>
                         <option value="1303">Bundesstraße</option>
@@ -111,8 +130,8 @@
                 </tr>
                 <tr>
                     <td>Zustand:</td>
-                    <td id="zus"></td>
-                    <td><select id="zus-neue" onchange="changeAttribute(this)">
+                    <td id="zus-ist"></td>
+                    <td><select id="zus">
                         <option value=""> - </option>
                         <option value="2100">Außer Betrieb, stillgelegt, verlassen</option>
                         <option value="4000">Im Bau</option>
@@ -120,18 +139,18 @@
                 </tr>
             </table>
 
-            <h6>SOLL Konzept</h6>
+            <h4>SOLL Konzept</h4>
 
             <table id="attributes-soll">
                 <tr>
                     <td>ATTRIBUT</td>
-                    <td></td>
-                    <td></td>
+                    <td>IST</td>
+                    <td>SOLL</td>
                 </tr>
                 <tr>
                     <td>Handlungsempfehlung:</td>
-                    <td id="HANDL"></td>
-                    <td><select id="HANDL-neue" onchange="changeAttribute(this)">
+                    <td id="HANDL-ist"></td>
+                    <td><select id="HANDL">
                         <option value=""> - </option>
                         <option value="a">Erhaltung wie Bestand (normale Unterhaltung)</option>
                         <option value="b">den Unterbau einschließende Sanierung (gleiche Kategorie)</option>
@@ -142,8 +161,8 @@
                 </tr>
                 <tr>
                     <td>Priorität:</td>
-                    <td id="PRIO"></td>
-                    <td><select id="PRIO-neue" onchange="changeAttribute(this)">
+                    <td id="PRIO-ist"></td>
+                    <td><select id="PRIO">
                         <option value=""> - </option>
                         <option value="Kurzfristig">Kurzfristig</option>
                         <option value="Mittelfristig">Mittelfristig</option>
@@ -152,8 +171,8 @@
                 </tr>
                 <tr>
                     <td>Zukünftige Unterhaltungspflicht:</td>
-                    <td id="ZUHPFL"></td>
-                    <td><select id="ZUHPFL-neue" onchange="changeAttribute(this)">
+                    <td id="ZUHPFL-ist"></td>
+                    <td><select id="ZUHPFL">
                         <option value=""> - </option>
                         <option value="Gemeinde">Gemeinde</option>
                         <option value="Kreis">Kreis</option>
@@ -164,11 +183,31 @@
                         <option value="Sonstige">Sonstige</option>
                     </select></td>
                 </tr>
+                <tr>
+                    <td>Zukünftige Kategorie:</td>
+                    <td id="ZWEGKAT-ist"></td>
+                    <td><select id="ZWEGKAT">
+                        <option value=""> - </option>
+                        <option value="a">A_klassifiziert</option>
+                        <option value="b">B_multifunktionaler Verbindungsweg</option>
+                        <option value="c">C_Hauptwirtschaftsweg</option>
+                        <option value="d">D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</option>
+                        <option value="e">E_untergeordneter Erschließungsweg mit luf Verkehr</option>
+                        <option value="f">F_Einzelerschließung kaum luf Verkehr</option>
+                        <option value="g">G_Binnenerschließung, entbehrlich für das Wegenetz</option>
+                        <option value="h">H_keine Funktion</option>
+                        <option value="i">I_Rad-, Reit-, Fußweg</option>
+                    </select></td>
+                </tr>
             </table>
 
             <button class="button" id="edit-confirm">Confirm</button>
-            <button class="button" id="edit-cancel">Cancel</button>
 
+        </div>
+
+        <!-- SOLL Karte -->
+        <div id="graph" style="display: none">
+            <img src="data/barplot.png">
         </div>
 
         <!-- SOLL Karte -->
@@ -176,7 +215,29 @@
 
         <!-- BaseLayer Schalter / Legende / Kategorisieren & Speichern Buttons -->
         <div id="footer">
-            <button class="button" id="recalculate">Neu Kategorisieren</button>
+            <div id="legende">
+                <ul>
+                    <li><span style="background: #d8000a;"></span>A_klassifiziert</li>
+                    <li><span style="background: #03bebe;"></span>B_multifunktionaler Verbindungsweg</li>
+                </ul>
+                <ul>  
+                    <li><span style="background: #ffb41d;"></span>C_Hauptwirtschaftsweg</li>
+                    <li><span style="background: #447f32;"></span>D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</li>
+                </ul>
+                <ul> 
+                    <li><span style="background: #153dcf;"></span>E_untergeordneter Erschließungsweg mit luf Verkehr</li>
+                    <li><span style="background: #f343eb;"></span>F_Einzelerschließung kaum luf Verkehr</li>
+                </ul>
+                <ul>
+                    <li><span style="background: #70e034;"></span>G_Binnenerschließung, entbehrlich für das Wegenetz</li>
+                    <li><span style="background: #e6ff01;"></span>H_keine Funktion<span style="padding-left: 20px"></span><span style="background: #868C30;"></span>I_Rad-, Reit-, Fußweg</li>
+                </ul>
+            </div>
+            <div id="buttons">
+                <button class="button" id="download" style="float: right; margin-right: 10px">Download</button>
+                <button class="button" id="compare" style="float: right; margin-right: 10px">Vergleichen</button>
+                <button class="button" id="recalculate" disabled style="float: right; margin-right: 10px">Neu Kategorisieren</button>
+            </div>
         </div>
 
     </div>

@@ -2,7 +2,7 @@
   --text: #777777;
   --background: white;
   --border: #ddd;
-  --color1: blue;
+  --color1: #ccc;
 }
 
 a {
@@ -30,6 +30,8 @@ body {
   height: 93vh;
   width: 50%;
   display: block;
+  border: 1px solid var(--border);
+  text-align: center;
 }
 
 #tabelle {
@@ -37,13 +39,18 @@ body {
   height: 93vh;
   width: 50%;
   display: block;
+  border: 1px solid var(--border);
+  padding-left: 20px
 }
 
-#map-ist {
+#graph {
   position: fixed;           
   height: 93vh;
   width: 50%;
   display: block;
+  border: 1px solid var(--border);
+  text-align: center;
+  padding: 20px;
 }
 
 #map {
@@ -52,6 +59,7 @@ body {
   height: 93vh;
   width: 50%;
   display: block;
+  border: 1px solid var(--border);
 }
 
 #footer {
@@ -59,7 +67,17 @@ body {
   bottom: 0;
   width: 100%;
   height: 7vh;
-  align-items: center;
+}
+
+#legende {
+  width: 80%;
+  float: left;
+}
+
+#buttons {
+  width: 20%;
+  display: inline-block;
+  padding-top: 10px;
 }
 
 .links {
@@ -117,18 +135,20 @@ body {
 ul {
     list-style-type: none;
     margin: 0;
-    padding: 10px;
+    padding: 0;
+    padding-left: 10px;
+    display: inline-block;
   }
   ul span {
     width: 10px;
     height: 2px;
-    display: inline-block;
     margin-right: 8px;
+    display: inline-block;
   }
 
 li {
   padding: 3px 0;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 h6 {
@@ -151,14 +171,14 @@ p {
 }
 
 .button {
-  background-color: #ccc;
+  background-color: gray;
   border: none;
   color: white;
   padding: 5px 5px;
   text-align: center;
   text-decoration: none;
   font-family: "Quicksand";
-  font-size: 14px;
+  font-size: 12px;
   transition-duration: 0.2s;
   border-radius: 4px;
 }
@@ -243,7 +263,7 @@ p {
   }
 
 td {
-    font-size: 11px;
+    font-size: 12px;
 }
 
 table {
