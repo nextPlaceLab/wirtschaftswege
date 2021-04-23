@@ -50,7 +50,6 @@ body {
   display: block;
   border: 1px solid var(--border);
   text-align: center;
-  padding: 20px;
 }
 
 #map {
