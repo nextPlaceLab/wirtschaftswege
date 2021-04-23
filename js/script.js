@@ -2,11 +2,6 @@
 /// MAPS & GLOBAL VARIABLES
 ///
 
-// Initiate maps
-var mapIst = L.map('map-ist', {
-    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
-}).setView([52.01799,9.03725], 13);
-
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 13);
@@ -20,9 +15,6 @@ var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type"
 var wegeLayer = L.Proj.geoJson(false, {
     onEachFeature: showPopupEdit
 }).addTo(map); // layer to store geojson data
-var istLayer = L.Proj.geoJson(false, {
-    onEachFeature: showPopup
-}).addTo(mapIst);
 var wegSelected = null;
 
 // Set up Base-Layers for each Map
@@ -39,29 +31,8 @@ var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_d
     minZoom: 6,
 }).addTo(map);
 
-var NRW_Luftbild_MapIst = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
-    layers: 'nw_dop_rgb',
-    format: 'image/png',
-    version: '1.1.0',
-    transparent: true,
-    opacity: 0.5,
-    attribution: "",
-    tiled: true,
-    maxZoom: 22,
-    minZoom: 6,
-}).addTo(mapIst);
-
 // Set up OSM tile layer 
 var OSM_Layer_Map = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 22,
-    id: 'mapbox/light-v10',
-    tileSize: 512,
-    zoomOffset: -1,
-    accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
-});
-
-var OSM_Layer_MapIst = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 22,
     id: 'mapbox/light-v10',
@@ -91,7 +62,6 @@ proj4.defs([
 
 // Add gemeinde from file
 var gemeindeLayer = L.Proj.geoJson().addTo(map);
-var gemeindeLayerIst = L.Proj.geoJson().addTo(mapIst);
 var json = (function() {
     var json = null;
     $.ajax({
@@ -105,21 +75,8 @@ var json = (function() {
     });
     gemeinde = json;
     gemeindeLayer.addData(json);
-    gemeindeLayerIst.addData(json);
     // Style
     gemeindeLayer.eachLayer(function(feat) {
-        feat.setStyle(
-            {
-                fillColor: 'white',
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0
-            }
-        )
-    })
-    gemeindeLayerIst.eachLayer(function(feat) {
         feat.setStyle(
             {
                 fillColor: 'white',
@@ -157,44 +114,14 @@ function chooseGemeinde(e) {
     }
 }
 
-// Toggle IST Map
-$('#hide').click(function() {
-    var mapIstDiv = document.getElementById('map-ist');
-    var mapDiv = document.getElementById('map');
-    if (mapIstDiv.style.display == 'none') {
-        mapIstDiv.style.display = 'block';
-        mapDiv.style.width = '50%';
-        mapDiv.style.marginLeft = '50%';
-        map.invalidateSize();
-        document.getElementById('hide').innerHTML = "IST ausblenden";
-    } else {
-        mapIstDiv.style.display = 'none';
-        mapDiv.style.width = '100%';
-        mapDiv.style.marginLeft = '0%';
-        map.invalidateSize();
-        document.getElementById('hide').innerHTML = "IST zeigen";
-    }
-});
-
-// Workaround for keeping streets from moving when map is dragged
-// that happens because of the synchronization ¯\_(ツ)_/¯
-map.on("dragend", function(e) {
-    var features = wegeLayer.toGeoJSON();
-    wegeLayer.clearLayers();
-    wegeLayer.addData(features);
-    wegeLayer.eachLayer(function(feature) {
-        // Style features
-        var type = feature['feature']['properties']['WEGKAT'];
-        feature.setStyle({
-            color: styles[type],
-            weight: 2,
-            opacity: 1,
-    })
-})
-})
-
 // Load test data
 $('#test').click(function() {
+    // Hide FirstPage
+    document.getElementById("firstPage").style.display = 'none';
+    // Make map fullscreen
+    document.getElementById("map").style.width = '100%';
+    document.getElementById("map").style.marginLeft = '0';
+    map.invalidateSize();
     // Add layers from file
     var json = (function() {
         var json = null;
@@ -210,7 +137,6 @@ $('#test').click(function() {
         geoJson = json;
         console.log(geoJson);
         addGeojson();
-        createIst();
     })();
 })
 
@@ -240,31 +166,6 @@ $('#request-exe').click(function() {
     // Call function to make request
     completeRequest(requestFile, features);
 })
-
-function createIst() {
-    document.getElementById('firstPage').style.display = 'none';
-    document.getElementById('map-ist').style.display = 'block';
-    mapIst.invalidateSize();
-    // Add features to layer
-    istLayer.addData(geoJson);
-    // Style features according to category
-    istLayer.eachLayer(function(feature) {
-        // Style features
-        var type = feature['feature']['properties']['WEGKAT'];
-        feature.setStyle({
-            color: styles[type],
-            weight: 2,
-            opacity: 1,
-        })
-    })
-    mapIst.fitBounds(istLayer.getBounds());
-    map.sync(mapIst);
-    mapIst.dragging.disable();
-    mapIst.touchZoom.disable();
-    mapIst.doubleClickZoom.disable();
-    mapIst.scrollWheelZoom.disable();
-    mapIst.keyboard.disable();
-}
 
 // FUNCTIONS
 // Function to calculate bounding box
@@ -515,27 +416,23 @@ var HANDLValues = {
     "e": "Neubau (neue Trasse)"
 }
 // Dictionary of ART Values
-var ARTValues = {
+var artValues = {
     null: " - ",
     "1103": "Fußweg",
     "1106": "Radweg",
     "1107": "Reitweg",
     "1110": "Rad- und Fußweg"
 }
-// Dictionary of other values
-var otherValues = {
-    null: " - ",
-    "1": "Nutzung gelegentlich/saisonal",
-    "2": "Nutzung häufig"
-}
 // Dictionary of PRIO Values
 var PRIOValues = {
+    null: " - ",
     "Kurzfristig": "Kurzfristig",
     "Mittelfristig": "Mittelfristig",
     "Langfristig": "Langfristig"
 }
 // Dictionary of ZUHPFL Values
 var ZUHPFLValues = {
+    null: " - ",
     "Gemeinde": "Gemeinde",
     "Kreis": "Kreis",
     "Land": "Land",
@@ -553,35 +450,8 @@ function onclick(feature, layer) {
     });
 }
 
-// Function to show Popup with attribute (IST)
-var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-function showPopup(feature, layer) {
-    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-            <tr>\
-                <th scope="row">Straßenname: </th>\
-                <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Wegekategorie: </th>\
-                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Zukünftige Wegekat.: </th>\
-                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Abschnittslänge (m): </th>\
-                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Handlungsempfehlung: </th>\
-                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
-            </tr>\
-        </table>';
-    layer.bindPopup(popupContent, {maxHeight: 400});
-}
-
 // Function to show Popup with attribute (SOLL)
+var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
 function showPopupEdit(feature, layer) {
     layer.on({
         click: function() {
@@ -619,16 +489,15 @@ function showPopupEdit(feature, layer) {
 function editAttribute () {
     console.log('clicked');
     var feature = wegSelected;
+    console.log(feature);
     var table = document.getElementById("tabelle");
     if (table.style.display == 'none') {
-        // Hide IST Map or Resize SOLL Map
+        // Resize Map
         // And show attribut tabelle
-        var mapIstDiv = document.getElementById('map-ist');
         var mapDiv = document.getElementById('map');
-        if (mapIstDiv.style.display == 'none') {
+        if (mapDiv.style.marginLeft == '50%') {
             table.style.display = "block";
         } else {
-            mapIstDiv.style.display = 'none';
             mapDiv.style.width = '50%';
             mapDiv.style.marginLeft = '50%';
             map.invalidateSize();
@@ -645,7 +514,7 @@ function editAttribute () {
         // If row has an id
         if (row.id != "") {
             // If it is WDM or ZUS get value from dictionary
-            if ((row.id == "wdm") || (row.id == "zus")) {
+            if (row.id != "LAENGE") {
                 var value = feature['feature']['properties'][row.id];
                 var values = row.id + "Values";
                 row.innerHTML = window[values][value];
@@ -654,14 +523,6 @@ function editAttribute () {
                 var laenge = feature['feature']['properties'][row.id];
                 var rounded = laenge.toFixed(2);
                 row.innerHTML = rounded;
-                // Any other value, get from feature properties
-            } else {
-                var value = feature['feature']['properties'][row.id];
-                if (value) {
-                    row.innerHTML = value;
-                } else {
-                    row.innerHTML = " - ";
-                }
             }
         }
     }
@@ -845,6 +706,9 @@ map.on('click', function(e) {
     });
     // Hide table
     document.getElementById("tabelle").style.display = "none";
+    document.getElementById("map").style.width = "100%";
+    document.getElementById("map").style.marginLeft = "0";
+    map.invalidateSize();
 })
 
 /// 
@@ -887,7 +751,7 @@ checkboxes.forEach(function(checkbox) {
 /// 
 /// TOGGLE
 ///
-
+/*
 // Toggle-BaseLayers
 // Funktion beim laden der Seite aufrufen
 window.addEventListener("load", function() {
@@ -912,7 +776,7 @@ window.addEventListener("load", function() {
 /// IN CASE WE NEED IT
 ///
 
-/*
+
 // Make test request
 $('#test').click(function() {
 

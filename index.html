@@ -40,14 +40,6 @@
 
             <h6>Wirtschaftswege - Analyse</h6>
 
-            <div id="sidebar-content">
-                <a href="#test" id="test">Test</a>
-                <p>Zoomen Sie auf den gewünschten Bereich</p>
-                <button class="button" id="request-exe">Wege Kategorisieren</button>
-                <p>Klicken Sie auf einen Weg, um seine Attribute zu ändern</p>
-                <button class="button" id="recalculate">Neu Kategorisieren</button> 
-            </div>
-
             <label class="switch">
                 <input type="checkbox" id="baselayerSwitcher">
                 <span class="slider round"></span>Base Layer Toggle
@@ -78,73 +70,20 @@
         <div id="tabelle" style="display: none">
 
             <h6>Attribut Tabelle</h6>
-            <table id="attributes">
+
+            <h6>IST Konzept</h6>
+
+            <table id="attributes-ist">
                 <tr>
                     <td>ATTRIBUT</td>
                     <td>IST</td>
-                    <td>SOLL</td>
+                    <td>IST-Korrigiert</td>
                 </tr>
                 <tr>
                 <td>Abschnittslänge (m):</td>
                     <td id="LAENGE"></td>
                     <td> - </td>
                 </tr>
-                <!--
-                <tr>
-                    <td>Funktion Landwirtschaft:</td>
-                    <td id="FKT_LW"></td>
-                    <td><select id="FKT_LW-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                <tr>
-                    <td>Funktion Tourismus:</td>
-                    <td id="FKT_TFE"></td>
-                    <td><select id="FKT_TFE-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                <tr>
-                    <td>Funktion Fahrrad:</td>
-                    <td id="FKT_RA"></td>
-                    <td><select id="FKT_RA-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                <tr>
-                    <td>Funktion Produktion EE:</td>
-                    <td id="FKT_PEE"></td>
-                    <td><select id="FKT_PEE-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                <tr>
-                    <td>Funktion Wandern:</td>
-                    <td id="FKT_WA"></td>
-                    <td><select id="FKT_WA-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                <tr>
-                    <td>Funktion Einzelinteresse:</td>
-                    <td id="FKT_EI"></td>
-                    <td><select id="FKT_EI-neue" onchange="changeAttribute(this)">
-                        <option value=""> - </option>
-                        <option value="1">Nutzung gelegentlich/saisonal</option>
-                        <option value="2">Nutzung häufig</option>
-                    </select></td>
-                </tr>
-                -->
                 <tr>
                     <td>Nutzung:</td>
                     <td id="art"></td>
@@ -178,6 +117,16 @@
                         <option value="2100">Außer Betrieb, stillgelegt, verlassen</option>
                         <option value="4000">Im Bau</option>
                     </select></td>
+                </tr>
+            </table>
+
+            <h6>SOLL Konzept</h6>
+
+            <table id="attributes-soll">
+                <tr>
+                    <td>ATTRIBUT</td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 <tr>
                     <td>Handlungsempfehlung:</td>
@@ -222,17 +171,12 @@
 
         </div>
 
-        <!-- IST Karte
-        <div id="map-ist" style="display: none"></div>
-        -->
-
         <!-- SOLL Karte -->
         <div id="map"></div>
 
         <!-- BaseLayer Schalter / Legende / Kategorisieren & Speichern Buttons -->
         <div id="footer">
             <button class="button" id="recalculate">Neu Kategorisieren</button>
-            <button class="button" id="hide">IST ausblenden</button>
         </div>
 
     </div>
