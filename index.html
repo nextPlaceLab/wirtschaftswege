@@ -59,6 +59,9 @@
             <p>- Dynamische Änderung räumlicher Standortpotentiale</p>
             <p>- User Experience und Interaction Design</p>
             <br>
+            <button class="button" id="test">Test Daten Laden</button>
+            <br>
+            <br>
             <select id="gemeinde" onchange="chooseGemeinde(this)">
                 <option disabled selected value>Wählen Sie eine Gemeinde</option>
                 <option value="Barntrup">Barntrup</option>
@@ -73,7 +76,16 @@
             <button class="button" id="request-exe">Wege Kategorisieren</button>
             <br>
             <br>
-            <button class="button" id="test">Test Daten Laden</button>
+            <!-- Loading Wheel -->
+            <div id="loading">
+                <img src="data/loading-spin.gif" width="40">
+            </div>
+            <!-- Selected Area Size -->
+            <h6>Prozess läuft...</h6>
+            <div id="progress-size">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="progress-value"></div>
         </div>
 
         <!-- Attribute Tabelle zu Editieren -->
@@ -207,7 +219,7 @@
 
         <!-- SOLL Karte -->
         <div id="graph" style="display: none">
-            <img src="data/barplot.png">
+            <img src="data/barplot.PNG">
         </div>
 
         <!-- SOLL Karte -->
@@ -236,7 +248,7 @@
             <div id="buttons">
                 <button class="button" id="download" style="float: right; margin-right: 10px">Download</button>
                 <button class="button" id="compare" style="float: right; margin-right: 10px">Vergleichen</button>
-                <button class="button" id="recalculate" disabled style="float: right; margin-right: 10px">Neu Kategorisieren</button>
+                <button class="button" id="recalculate" style="float: right; margin-right: 10px">Neu Kategorisieren</button>
             </div>
         </div>
 

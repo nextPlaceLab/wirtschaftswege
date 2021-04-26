@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wps:ExecuteResponse xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ../wpsExecute_response.xsd" service="WPS" version="1.0.0" xml:lang="en-US" serviceInstance="https://wps.livinglab-essigfabrik.online/wps?request=GetCapabilities&amp;amp;service=WPS" statusLocation="https://wps.livinglab-essigfabrik.online/outputs/f82d28ee-a693-11eb-af10-0242ac130002.xml">
+    <wps:Process wps:processVersion="0.8.3">
+        <ows:Identifier>wwk_k</ows:Identifier>
+        <ows:Title>Wirtschaftswegekonzept Kategorisierung</ows:Title>
+        <ows:Abstract>Dieser Prozess kategorisiert Wirtschaftswege.</ows:Abstract>
+	</wps:Process>
+    <wps:Status creationTime="2021-04-26T13:33:46Z">
+        <wps:ProcessStarted percentCompleted="45">Feldrechner Einzelinteressen: 33 - </wps:ProcessStarted>
+	</wps:Status>
+</wps:ExecuteResponse>

@@ -1,3 +1,6 @@
+$('#progress-bar').css('width', '10%');
+$('progress-value').html('10%');
+
 /// 
 /// MAPS & GLOBAL VARIABLES
 ///
@@ -8,6 +11,7 @@ var map = L.map('map', {
 
 // Global Variables
 var status = 'status'; // status of request
+var progress = '0%'; // progress of request
 var geoJson = null; // geojson data
 var bbox = null; // current bounding box
 var gemeinde = null;
@@ -30,16 +34,6 @@ var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_d
     maxZoom: 22,
     minZoom: 6,
 }).addTo(map);
-
-// Set up OSM tile layer 
-var OSM_Layer_Map = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 22,
-    id: 'mapbox/light-v10',
-    tileSize: 512,
-    zoomOffset: -1,
-    accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
-});
 
 // Geocoder
 var osmGeocoder = new L.Control.Geocoder({
@@ -139,7 +133,7 @@ $('#test').click(function() {
     })();
 })
 
-// Load test data
+// Download geojson to machine
 $('#download').click(function() {
     var features = wegeLayer.toGeoJSON();
     var file = 'wegenetz.geojson';
@@ -151,11 +145,11 @@ $('#download').click(function() {
 // Show Graph
 $('#compare').click(function() {
     var table = document.getElementById("tabelle");
+    var mapDiv = document.getElementById('map');
+    var graph = document.getElementById('graph');
     if (table.style.display == 'none') {
         // Resize Map
         // And show graph
-        var mapDiv = document.getElementById('map');
-        var graph = document.getElementById('graph');
         if (mapDiv.style.marginLeft == '50%') {
             graph.style.display = "block";
         } else {
@@ -165,6 +159,9 @@ $('#compare').click(function() {
             map.invalidateSize();
             graph.style.display = "block";
         }
+    } else {
+        table.style.display = 'none';
+        graph.style.display = 'block';
     }
 })
 
@@ -182,24 +179,20 @@ var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e
 // When button is clicked, categorize streets
 $('#request-exe').click(function() {
     // Request file for NEW categorization
-    //var requestFile = "src/request4_store.xml";
-    var requestFile = "src/request4_store_selektion_text.xml";
-    // Get current bounds of the map
-    //var bounds = map.getBounds();
-    // Calculate bounding box 
-    //getBbox(bounds);
+    var requestFile = "src/request4_store.xml";
+    //var requestFile = "src/req_amanda.xml";
     // Set features to false because it's a new request, so we're not
     // sending any features
     var features = false;
     // Call function to make request
     // Hide FirstPage
-    document.getElementById("firstPage").style.display = 'none';
+    //document.getElementById("firstPage").style.display = 'none';
     // Make map fullscreen
-    document.getElementById("map").style.width = '100%';
-    document.getElementById("map").style.marginLeft = '0';
-    map.invalidateSize();
+    //document.getElementById("map").style.width = '100%';
+    //document.getElementById("map").style.marginLeft = '0';
+    //map.invalidateSize();
     completeRequest(requestFile, features);
-})
+});
 
 // FUNCTIONS
 // Function to calculate bounding box
@@ -240,7 +233,7 @@ function completeRequest(requestFile, features) {
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
     // Add gemeinde grenzen
     var grenzen = JSON.stringify(selektion);
-    sendRequest = sendRequest.replace(/hier das Polygon als Json/g, grenzen);
+    sendRequest = sendRequest.replace(/hier das Polygon als Text/g, grenzen);
     // If we are sending features, add them too
     if (features) {
         console.log('sending features');
@@ -255,12 +248,25 @@ function completeRequest(requestFile, features) {
         url: requestUrl,
         data: sendRequest,
         dataType: 'text',
+        async: false,
         success: function (response) {
             // Get status url from the response
             var statusUrl = response.split('statusLocation="').pop().split('"')[0];
+            console.log(statusUrl);
             // Check status every X seconds, until it is succeeded
             while (!status.includes("ProcessSucceeded")) {
-                setTimeout(getStatus(statusUrl), 3000);
+                if (status.includes("ProcessFailed")) {
+                    console.log("Process failed");
+                    break;
+                } else {
+                    var percentage = status.split('percentCompleted="').pop().split('"')[0] + "%";
+                    if ((percentage != progress) && (percentage != 'status%') && (percentage != '%')) {
+                        progress = percentage;
+                        console.log(progress);
+                        progressUpdate();
+                    }
+                    setTimeout(getStatus(statusUrl), 10000);
+                }
             }
             // When succeeded, check if features are in the response or in a link
             if (status.includes('href=')) {
@@ -318,6 +324,12 @@ function getGeojson(url) {
     // Write geojson on global variable
     geoJson = answer;
 };
+
+// Function to update progress
+function progressUpdate() {
+    $('#progress-bar').css('width', progress);
+    $('progress-value').html(progress);
+}
 
 // Function to add result features into map
 function addGeojson(url) {

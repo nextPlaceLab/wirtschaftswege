@@ -80,8 +80,11 @@
     <wps:Input>
       <ows:Identifier>selektion</ows:Identifier>
       <wps:Data>
+        <wps:ComplexData mimeType="application/json">
+hier das Polygon als Text
+		</wps:ComplexData>
       </wps:Data>
-    </wps:Input>	
+    </wps:Input>
   </wps:DataInputs>
   <wps:ResponseForm>
 	<wps:ResponseDocument storeExecuteResponse="true" status="true">
