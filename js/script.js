@@ -1,8 +1,39 @@
-var progressBar = $('#progress-bar');
+var bar = new ProgressBar.Line(container, {
+    strokeWidth: 4,
+    easing: 'easeInOut',
+    duration: 1400,
+    color: '#FFEA82',
+    trailColor: '#eee',
+    trailWidth: 1,
+    svgStyle: {width: '100%', height: '100%'},
+    text: {
+      style: {
+        // Text color.
+        // Default: same as stroke color (options.color)
+        color: '#999',
+        position: 'absolute',
+        right: '0',
+        top: '30px',
+        padding: 0,
+        margin: 0,
+        transform: null
+      },
+      autoStyleContainer: false
+    },
+    from: {color: '#FFEA82'},
+    to: {color: '#ED6A5A'},
+    step: (state, bar) => {
+      bar.setText(Math.round(bar.value() * 100) + ' %');
+    }
+});
 
-var test = '50%';
-
-progressBar.css('width', test);
+$('#animate').click(function() {
+    var no = '45';
+    var noFloat = parseFloat(no);
+    var noFinal = noFloat*0.01;
+    console.log(noFinal);
+    bar.animate(noFinal);
+});
 
 /// 
 /// MAPS & GLOBAL VARIABLES
@@ -10,11 +41,11 @@ progressBar.css('width', test);
 
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
-}).setView([52.01799,9.03725], 13);
+}).setView([52.01799,9.03725], 22);
 
 // Global Variables
 var status = 'status'; // status of request
-var progress = '0%'; // progress of request
+var progress = '0'; // progress of request
 var geoJson = null; // geojson data
 var bbox = null; // current bounding box
 var gemeinde = null;
@@ -45,6 +76,8 @@ var osmGeocoder = new L.Control.Geocoder({
     text: 'Suche',
     title: 'Suche'
 }).addTo(map);
+
+var sidebar = L.control.sidebar('sidebar').addTo(map);
 
 // Default projections to convert from/to
 proj4.defs([
@@ -145,29 +178,6 @@ $('#download').click(function() {
     }), file);
 })
 
-// Show Graph
-$('#compare').click(function() {
-    var table = document.getElementById("tabelle");
-    var mapDiv = document.getElementById('map');
-    var graph = document.getElementById('graph');
-    if (table.style.display == 'none') {
-        // Resize Map
-        // And show graph
-        if (mapDiv.style.marginLeft == '50%') {
-            graph.style.display = "block";
-        } else {
-            table.style.display = 'none';
-            mapDiv.style.width = '50%';
-            mapDiv.style.marginLeft = '50%';
-            map.invalidateSize();
-            graph.style.display = "block";
-        }
-    } else {
-        table.style.display = 'none';
-        graph.style.display = 'block';
-    }
-})
-
 /// 
 /// REQUEST TO CATEGORIZE FOR THE FIRST TIME
 ///
@@ -262,11 +272,13 @@ function completeRequest(requestFile, features) {
                     console.log("Process failed");
                     break;
                 } else {
-                    var percentage = status.split('percentCompleted="').pop().split('"')[0] + "%";
-                    if ((percentage != progress) && (percentage != 'status%') && (percentage != '%')) {
+                    var percentage = status.split('percentCompleted="').pop().split('"')[0];
+                    if ((percentage != progress) && (percentage != 'status') && (percentage != '')) {
                         progress = percentage;
-                        //progressUpdate();
-                        progressBar.css('width', progress);
+                        var noFloat = parseFloat(progress);
+                        var noFinal = noFloat*0.01;
+                        console.log(noFinal);
+                        bar.animate(noFinal);
                         console.log(progress);
                     }
                     setTimeout(getStatus(statusUrl), 10000);
@@ -328,12 +340,6 @@ function getGeojson(url) {
     // Write geojson on global variable
     geoJson = answer;
 };
-
-// Function to update progress
-function progressUpdate() {
-    $('[id="progress-size"]').css('width', progress);
-    $('[id="progress-value"]').html(progress);
-}
 
 // Function to add result features into map
 function addGeojson(url) {
