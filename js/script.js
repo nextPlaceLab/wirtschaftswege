@@ -1,5 +1,8 @@
-$('#progress-bar').css('width', '10%');
-$('progress-value').html('10%');
+var progressBar = $('#progress-bar');
+
+var test = '50%';
+
+progressBar.css('width', test);
 
 /// 
 /// MAPS & GLOBAL VARIABLES
@@ -248,7 +251,7 @@ function completeRequest(requestFile, features) {
         url: requestUrl,
         data: sendRequest,
         dataType: 'text',
-        async: false,
+        //async: false,
         success: function (response) {
             // Get status url from the response
             var statusUrl = response.split('statusLocation="').pop().split('"')[0];
@@ -262,8 +265,9 @@ function completeRequest(requestFile, features) {
                     var percentage = status.split('percentCompleted="').pop().split('"')[0] + "%";
                     if ((percentage != progress) && (percentage != 'status%') && (percentage != '%')) {
                         progress = percentage;
+                        //progressUpdate();
+                        progressBar.css('width', progress);
                         console.log(progress);
-                        progressUpdate();
                     }
                     setTimeout(getStatus(statusUrl), 10000);
                 }
@@ -327,8 +331,8 @@ function getGeojson(url) {
 
 // Function to update progress
 function progressUpdate() {
-    $('#progress-bar').css('width', progress);
-    $('progress-value').html(progress);
+    $('[id="progress-size"]').css('width', progress);
+    $('[id="progress-value"]').html(progress);
 }
 
 // Function to add result features into map
