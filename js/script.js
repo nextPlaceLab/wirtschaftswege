@@ -1,3 +1,52 @@
+/// 
+/// MAPS & GLOBAL VARIABLES
+///
+
+var map = L.map('map', {
+    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
+}).setView([52.01799,9.03725], 22);
+
+// Global Variables
+var status = 'status'; // status of request
+var progress = '0'; // progress of request
+var geoJson = null; // geojson data
+var bbox = null; // current bounding box
+var gemeinde = null;
+var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
+var wegeLayer = L.Proj.geoJson(false, {
+    onEachFeature: showPopupEdit
+}).addTo(map); // layer to store categorized data
+var grundLayer = L.Proj.geoJson(false, {
+    onEachFeature: showPopupEdit
+}).addTo(map); // layer to store grund data
+var wegSelected = null;
+
+// Set up Base-Layers for each Map
+// Set up Luftbild Layer
+var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+    layers: 'nw_dop_rgb',
+    format: 'image/png',
+    version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+}).addTo(map);
+
+// Geocoder
+var osmGeocoder = new L.Control.Geocoder({
+    collapsed: true,
+    position: 'topleft',
+    text: 'Suche',
+    title: 'Suche'
+}).addTo(map);
+
+// Sidebar
+var sidebar = L.control.sidebar('sidebar').addTo(map);
+
+// ProgressBar
 var bar = new ProgressBar.Line(container, {
     strokeWidth: 4,
     easing: 'easeInOut',
@@ -27,6 +76,7 @@ var bar = new ProgressBar.Line(container, {
     }
 });
 
+// ProgressBar Test
 $('#animate').click(function() {
     var no = '45';
     var noFloat = parseFloat(no);
@@ -34,50 +84,6 @@ $('#animate').click(function() {
     console.log(noFinal);
     bar.animate(noFinal);
 });
-
-/// 
-/// MAPS & GLOBAL VARIABLES
-///
-
-var map = L.map('map', {
-    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
-}).setView([52.01799,9.03725], 22);
-
-// Global Variables
-var status = 'status'; // status of request
-var progress = '0'; // progress of request
-var geoJson = null; // geojson data
-var bbox = null; // current bounding box
-var gemeinde = null;
-var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
-var wegeLayer = L.Proj.geoJson(false, {
-    onEachFeature: showPopupEdit
-}).addTo(map); // layer to store geojson data
-var wegSelected = null;
-
-// Set up Base-Layers for each Map
-// Set up Luftbild Layer
-var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
-    layers: 'nw_dop_rgb',
-    format: 'image/png',
-    version: '1.1.0',
-    transparent: true,
-    opacity: 0.5,
-    attribution: "",
-    tiled: true,
-    maxZoom: 22,
-    minZoom: 6,
-}).addTo(map);
-
-// Geocoder
-var osmGeocoder = new L.Control.Geocoder({
-    collapsed: true,
-    position: 'topleft',
-    text: 'Suche',
-    title: 'Suche'
-}).addTo(map);
-
-var sidebar = L.control.sidebar('sidebar').addTo(map);
 
 // Default projections to convert from/to
 proj4.defs([
@@ -144,14 +150,8 @@ function chooseGemeinde(e) {
     }
 }
 
-// Load test data
+// Load test data categorized
 $('#test').click(function() {
-    // Hide FirstPage
-    document.getElementById("firstPage").style.display = 'none';
-    // Make map fullscreen
-    document.getElementById("map").style.width = '100%';
-    document.getElementById("map").style.marginLeft = '0';
-    map.invalidateSize();
     // Add layers from file
     var json = (function() {
         var json = null;
@@ -165,7 +165,28 @@ $('#test').click(function() {
         }
         });
         geoJson = json;
-        addGeojson();
+        var layer = 'wegeLayer';
+        addGeojson(layer);
+    })();
+})
+
+// Load test grund daten
+$('#test-grund').click(function() {
+    // Add layers from file
+    var json = (function() {
+        var json = null;
+        $.ajax({
+        'async': false,
+        'global': false,
+        'url': "data/ist.geojson",
+        'dataType': "json",
+        'success': function(data) {
+            json = data;
+        }
+        });
+        geoJson = json;
+        var layer = 'grundLayer';
+        addGeojson(layer);
     })();
 })
 
@@ -187,6 +208,16 @@ $('#download').click(function() {
 var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
 // Layer Styles
 var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
+var grundStyles = {
+    'Klassifizierte Straße': '#C00000',
+    'Kein Attribut': '#ED7D31',
+    'Hauptwirtschaftsweg': '#00FFFF',
+    'Wirtschaftsweg': '#FFFF00',
+    'Fußweg': '#FF33CC',
+    'Reitweg': '#7030A0',
+    'Rad- und Fußweg': '#00FF99',
+    'Radweg': '#006666'
+}
 
 // TRIGGER
 // When button is clicked, categorize streets
@@ -198,13 +229,8 @@ $('#request-exe').click(function() {
     // sending any features
     var features = false;
     // Call function to make request
-    // Hide FirstPage
-    //document.getElementById("firstPage").style.display = 'none';
-    // Make map fullscreen
-    //document.getElementById("map").style.width = '100%';
-    //document.getElementById("map").style.marginLeft = '0';
-    //map.invalidateSize();
-    completeRequest(requestFile, features);
+    var layer = 'wegeLayer';
+    completeRequest(requestFile, features, layer);
 });
 
 // FUNCTIONS
@@ -230,7 +256,7 @@ function getBbox(bounds) {
 }
 
 // Function to make whole Request
-function completeRequest(requestFile, features) {
+function completeRequest(requestFile, features, layer) {
     // Variable to save when request started
     // to calculate how long it took later
     var t0 = performance.now()
@@ -238,7 +264,6 @@ function completeRequest(requestFile, features) {
     // First clear global variables, in case an old request was made
     status = 'status';
     geoJson = null;
-    wegeLayer.clearLayers();
     // Read Request File
     var requestHttp = new JKL.ParseXML.Text(requestFile);
     var requestData = requestHttp.parse();
@@ -290,12 +315,12 @@ function completeRequest(requestFile, features) {
                 var geojsonUrl = status.split('href="').pop().split('"')[0];
                 // Request features and add to layer
                 getGeojson(geojsonUrl);
-                addGeojson();
+                addGeojson(layer);
             } else {
                 // If they're in response, parse and add to layer
                 var statusFeatures = status.split('<![CDATA[').pop().split(']]>')[0];
                 geoJson = JSON.parse(statusFeatures);
-                addGeojson();
+                addGeojson(layer);
             }
             // Log how long the request took
             var t1 = performance.now();
@@ -342,10 +367,21 @@ function getGeojson(url) {
 };
 
 // Function to add result features into map
-function addGeojson(url) {
+function addGeojson(layer) {
+    // Clear layer
+    window[layer].clearLayers();
     // Add features to layer
-    wegeLayer.addData(geoJson);
+    window[layer].addData(geoJson);
     // Style features according to category
+    if (layer == 'wegeLayer') {
+        styleKategorie();
+    } else {
+        styleGrund();
+    }
+    map.fitBounds(window[layer].getBounds());
+}
+
+function styleKategorie() {
     wegeLayer.eachLayer(function(feature) {
         // Style features
         var type = feature['feature']['properties']['WEGKAT'];
@@ -355,14 +391,55 @@ function addGeojson(url) {
             opacity: 1,
         });
         // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'FKT'];
+        var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
         for (var i in attribute) {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
         }
     });
-    map.fitBounds(wegeLayer.getBounds());
-    console.log(geoJson);
+}
+
+function styleGrund() {
+    grundLayer.eachLayer(function(feature) {
+        // Style features
+        var layer = null;
+        var wdm = feature['feature']['properties']['wdm'];
+        var fkt = feature['feature']['properties']['FKT'];
+        var art = feature['feature']['properties']['art'];
+        var zus = feature['feature']['properties']['zus'];
+        if (wdm != null) {
+            if (wdm == '9997') {
+                layer = 'Kein Attribut';
+            } else {
+                layer = 'Klassifizierte Straße';
+            }
+        } else if (fkt != null) {
+            layer = FKTValues[fkt];
+        } else if (art != null) {
+            layer = artValues[art];
+        }
+        if (zus != null) {
+            feature.setStyle({
+                color: grundStyles[layer],
+                weight: 2,
+                opacity: 1,
+                dashArray: '5',
+            });
+        } else {
+            feature.setStyle({
+                color: grundStyles[layer],
+                weight: 2,
+                opacity: 1,
+            });
+        }
+        // Add attributes for change
+        var attribute = ['wdm', 'zus', 'art', 'FKT'];
+        for (var i in attribute) {
+            var att = attribute[i];
+            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
+        }
+        feature['feature']['properties']['grundLayer'] = true;
+    });
 }
 
 /// 
@@ -513,6 +590,10 @@ function showPopupEdit(feature, layer) {
     layer.on({
         click: function() {
             wegSelected = layer;
+            var sidebarStatus = document.getElementById("sidebar").className;
+            if (sidebarStatus == 'sidebar sidebar-left leaflet-touch') {
+                editAttribute();
+            }
         }
     });
     if ("STS" in feature.properties) {
@@ -572,22 +653,10 @@ function showPopupEdit(feature, layer) {
 // Edit attribute
 function editAttribute () {
     var feature = wegSelected;
-    var table = document.getElementById("tabelle");
-    var graph = document.getElementById("graph");
-    if (table.style.display == 'none') {
-        // Resize Map
-        // And show attribut tabelle
-        var mapDiv = document.getElementById('map');
-        if (mapDiv.style.marginLeft == '50%') {
-            graph.style.display = "none";
-            table.style.display = "block";
-        } else {
-            mapDiv.style.width = '50%';
-            mapDiv.style.marginLeft = '50%';
-            map.invalidateSize();
-            graph.style.display = "none";
-            table.style.display = "block";
-        }
+    if (feature['feature']['properties']['grundLayer']) {
+        sidebar.open("edit-grund");
+    } else {
+        sidebar.open("edit-soll");
     }
     // Then fill attribute table
     // Attributes that can't be changed
@@ -670,18 +739,16 @@ function notChanged() {
 // Hide Table when click outside of map
 map.on('click', function(e) {
     // First reset style of all features
+    /*
     wegeLayer.eachLayer(function(feature) {
         feature.setStyle({
             weight: 2,
         })
         feature['feature']['properties']['selected'] = false;
     });
-    // Hide table
-    document.getElementById("tabelle").style.display = "none";
-    document.getElementById("graph").style.display = "none";
-    document.getElementById("map").style.width = "100%";
-    document.getElementById("map").style.marginLeft = "0";
-    map.invalidateSize();
+    */
+    // Hide Sidebar
+    sidebar.close();
 })
 
 /// 
@@ -720,31 +787,6 @@ checkboxes.forEach(function(checkbox) {
     })
   });
 });
-
-/// 
-/// TOGGLE
-///
-/*
-// Toggle-BaseLayers
-// Funktion beim laden der Seite aufrufen
-window.addEventListener("load", function() {
-
-     // Der ID den Event-Handler 'click' hinzufügen,
-     // als Event die Funktion 'toggleModes' aufrufen.
-     document.getElementById("baselayerSwitcher").addEventListener("click", toggleBaselayer);
-    }
-   );
-    function toggleBaselayer() {
-
-        if (document.getElementById("baselayerSwitcher").checked) {
-        map.addLayer(OSM_Layer),
-        map.removeLayer(NRW_Luftbild);
-        } else {
-        map.removeLayer(OSM_Layer),
-        map.addLayer(NRW_Luftbild);
-        }
-}
-*/
 
 
 

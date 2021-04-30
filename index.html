@@ -16,8 +16,6 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-    <!-- L Sync -->
-    <script type="text/javascript" src="src/L.Map.Sync.js"></script>
     <!-- Leaflet Sidebar -->
     <script type="text/javascript" src="src/leaflet-sidebar.js"></script>
     <!-- Autolinker -->
@@ -47,7 +45,7 @@
         <div class="sidebar-tabs">
             <ul role="tablist">
                 <li><a href="#start" role="tab"><i class="fas fa-play"></i></a></li>
-                <li class="disabled"><a href="#categorize" role="tab"><i class="fas fa-filter"></i></a></li>
+                <li><a href="#categorize" role="tab"><i class="fas fa-filter"></i></a></li>
                 <li><a href="#edit-grund" role="tab"><i class="fas fa-pen"></i></a></li>
                 <li><a href="#edit-soll" role="tab"><i class="fas fa-pen"></i></a></li>
                 <li><a href="#compare" role="tab"><i class="fas fa-chart-bar"></i></a></li>
@@ -61,6 +59,7 @@
 
         <!-- Tab panes -->
         <div class="sidebar-content">
+
             <div class="sidebar-pane" id="start">
                 <h1 class="sidebar-header">
                     Start
@@ -77,9 +76,9 @@
                     <option value="Leopoldshöhe">Leopoldshöhe</option>
                 </select>
 
-                <button class="button" id="request-exe">Wege Kategorisieren</button>
+                <button class="button" id="request-exe">Grund Daten Laden</button>
 
-                <button class="button" id="test">Test Daten Laden</button>
+                <button class="button" id="test-grund">Test Grund Daten Laden</button>
 
                 <div id="container"></div>
 
@@ -90,12 +89,14 @@
             <div class="sidebar-pane" id="categorize">
                 <h1 class="sidebar-header">Kategorisierung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 
-                <button class="button" id="recalculate">Neu Kategorisieren</button>
+                <button class="button" id="recalculate">Wegen Kategorisieren</button>
+
+                <button class="button" id="test">Test Daten Laden</button>
             
             </div>
 
             <div class="sidebar-pane" id="edit-grund">
-                <h1 class="sidebar-header">Editieren<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <h1 class="sidebar-header">Grunddatenanpassung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 
                 <table id="attributes-ist">
                     <tr>
@@ -158,7 +159,7 @@
             </div>
 
             <div class="sidebar-pane" id="edit-soll">
-                <h1 class="sidebar-header">Editieren<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <h1 class="sidebar-header">Konzepterarbeitung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 
                 <table id="attributes-soll">
                     <tr>
