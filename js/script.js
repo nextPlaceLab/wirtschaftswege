@@ -13,7 +13,7 @@ var geoJson = null; // geojson data
 var bbox = null; // current bounding box
 var gemeinde = null;
 var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
-var highlightLayer = L.layerGroup().addTo(map);
+var highlightLayer = L.geoJson().addTo(map);
 var wegeLayer = L.Proj.geoJson(false, {
     onEachFeature: showPopupEdit
 }).addTo(map); // layer to store categorized data
@@ -280,12 +280,11 @@ function completeRequest(requestFile, features, layer) {
     } else {
         console.log('getting features');
     }
-    /*
+    
     var file = 'requestwithfeatures.txt';
     saveAs(new File([sendRequest], file, {
         type: "text/plain;charset=utf-8"
     }), file);
-    */
     
     // Make Request
     var ajax = $.ajax({
@@ -399,11 +398,13 @@ function styleKategorie() {
             opacity: 1,
         });
         // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
+        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
         for (var i in attribute) {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
         }
+        // ZWEGKAT == WEGKAT
+        feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
     });
 }
 
@@ -441,12 +442,14 @@ function styleGrund() {
             });
         }
         // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
+        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
         for (var i in attribute) {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
         }
         feature['feature']['properties']['grundLayer'] = true;
+        // ZWEGKAT == WEGKAT
+        feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
     });
 }
 
@@ -461,8 +464,12 @@ $('#recalculate').click(function() {
     var features = grundLayer.toGeoJSON();
     // Reproject coordinates
     reprojGeojson(features);
+    features['crs'] = { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } };
+    console.log(features);
     // Stringify
     var featuresString = JSON.stringify(features);
+    console.log(featuresString);
+    /*
     // Request file for re-categorization
     var requestFile = "src/request4_store_edited.xml";
     // Get bounds of layer
@@ -472,6 +479,7 @@ $('#recalculate').click(function() {
     var layer = "wegeLayer";
     // Make request
     completeRequest(requestFile, featuresString, layer);
+    */
 });
 
 // FUNCTIONS
@@ -567,6 +575,19 @@ var ZUHPFLValues = {
 }
 
 var ZWEGKATValues = {
+    "": " - ",
+    "a": 'A_klassifiziert',
+    "b": "B_multifunktionaler Verbindungsweg",
+    "c": "C_Hauptwirtschaftsweg",
+    "d": "D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr",
+    "e": "E_untergeordneter Erschließungsweg mit luf Verkehr",
+    "f": "F_Einzelerschließung kaum luf Verkehr",
+    "g": "G_Binnenerschließung, entbehrlich für das Wegenetz",
+    "h": "H_keine Funktion",
+    "i": "I_Rad-, Reit-, Fußweg"
+}
+
+var WEGKATValues = {
     "": " - ",
     "a": 'A_klassifiziert',
     "b": "B_multifunktionaler Verbindungsweg",
@@ -721,13 +742,6 @@ function editAttribute () {
     }
 };
 
-function createMiddleMarkers(line){
-	var latlngs = line.getLatLngs()[0];
-    var item = Math.floor(latlngs.length/2);
-    var newLatLng = latlngs[item];
-    L.marker(newLatLng).addTo(highlightLayer);
-}
-
 $('#edit-confirm').click(function() {
     var feature = wegSelected;
     // Select all table tags
@@ -746,13 +760,8 @@ $('#edit-confirm').click(function() {
                 if (newValue == "") {
                     newValue = null;
                 }
-                console.log(typeof oldValue);
-                console.log(typeof newValue);
                 if (newValue != oldValue) {
                     feature['feature']['properties'][id] = newValue;
-                    feature.setStyle(changed());
-                } else {
-                    feature.setStyle(notChanged());
                 }
             }
         }
@@ -777,11 +786,20 @@ $('#edit-confirm').click(function() {
     }
     console.log(attsChanged);
     if (attsChanged > 0) {
-        createMiddleMarkers(feature);
+        highlightLayer.addData(feature.feature, {
+            style: {
+                weight: 10,
+                color: '#ffffff'
+            }
+        });
+        console.log(highlightLayer);
+        /*
         feature.setStyle({
             weight: 5
         });
+        */
     } else {
+        /*
         var line = feature.geometry;
         highlightLayer.eachLayer(function(marker) {
             var point = marker.geometry;
@@ -790,13 +808,15 @@ $('#edit-confirm').click(function() {
                 highlightLayer.removeLayer(marker);
             }
         })
+        
         feature.setStyle({
             weight: 2
         });
+        */
     }
     // Style ZUS
     var zus = feature['feature']['properties']['zus'];
-    if (zus != "") {
+    if (zus != null) {
         feature.setStyle({
             dashArray: '10'
         });
@@ -834,43 +854,6 @@ map.on('click', function(e) {
     // Hide Sidebar
     sidebar.close();
 })
-
-/// 
-/// LAYER CONTROL
-///
-
-// Turn Layers on and off
-// Function to show layer
-function show() {
-    return {
-        opacity: 1,
-    };
-}
-// Function to hide layer
-function hide() {
-    return {
-        opacity: 0,
-    };
-}
-
-// Get checkboxes
-var checkboxes = document.querySelectorAll("input[type=checkbox]");
-// Listen for changes
-checkboxes.forEach(function(checkbox) {
-  checkbox.addEventListener('change', function() {
-    wegeLayer.eachLayer(function(feature) {
-        var type = feature['feature']['properties']['WEGKAT'];
-        if (type == checkbox.id) {
-            if (checkbox.checked) {
-                feature.setStyle(show());
-                L.control()
-            } else {
-                feature.setStyle(hide());
-            }
-        }
-    })
-  });
-});
 
 
 
