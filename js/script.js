@@ -13,6 +13,7 @@ var geoJson = null; // geojson data
 var bbox = null; // current bounding box
 var gemeinde = null;
 var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
+var highlightLayer = L.layerGroup().addTo(map);
 var wegeLayer = L.Proj.geoJson(false, {
     onEachFeature: showPopupEdit
 }).addTo(map); // layer to store categorized data
@@ -229,7 +230,7 @@ $('#request-exe').click(function() {
     // sending any features
     var features = false;
     // Call function to make request
-    var layer = 'wegeLayer';
+    var layer = 'grundLayer';
     completeRequest(requestFile, features, layer);
 });
 
@@ -279,6 +280,12 @@ function completeRequest(requestFile, features, layer) {
     } else {
         console.log('getting features');
     }
+    /*
+    var file = 'requestwithfeatures.txt';
+    saveAs(new File([sendRequest], file, {
+        type: "text/plain;charset=utf-8"
+    }), file);
+    */
     
     // Make Request
     var ajax = $.ajax({
@@ -379,6 +386,7 @@ function addGeojson(layer) {
         styleGrund();
     }
     map.fitBounds(window[layer].getBounds());
+    console.log(window[layer]);
 }
 
 function styleKategorie() {
@@ -391,7 +399,7 @@ function styleKategorie() {
             opacity: 1,
         });
         // Add attributes for change
-        var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
+        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
         for (var i in attribute) {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
@@ -404,7 +412,7 @@ function styleGrund() {
         // Style features
         var layer = null;
         var wdm = feature['feature']['properties']['wdm'];
-        var fkt = feature['feature']['properties']['FKT'];
+        var fkt = feature['feature']['properties']['fkt'];
         var art = feature['feature']['properties']['art'];
         var zus = feature['feature']['properties']['zus'];
         if (wdm != null) {
@@ -414,7 +422,7 @@ function styleGrund() {
                 layer = 'Klassifizierte Straße';
             }
         } else if (fkt != null) {
-            layer = FKTValues[fkt];
+            layer = fktValues[fkt];
         } else if (art != null) {
             layer = artValues[art];
         }
@@ -433,7 +441,7 @@ function styleGrund() {
             });
         }
         // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'FKT'];
+        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
         for (var i in attribute) {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
@@ -450,7 +458,7 @@ function styleGrund() {
 // When button is clicked, re-categorize streets
 $('#recalculate').click(function() {
     // Save layer as geojson
-    var features = wegeLayer.toGeoJSON();
+    var features = grundLayer.toGeoJSON();
     // Reproject coordinates
     reprojGeojson(features);
     // Stringify
@@ -458,11 +466,12 @@ $('#recalculate').click(function() {
     // Request file for re-categorization
     var requestFile = "src/request4_store_edited.xml";
     // Get bounds of layer
-    var bounds = wegeLayer.getBounds();
+    var bounds = grundLayer.getBounds();
     // Calculate bounding box 
     getBbox(bounds);
+    var layer = "wegeLayer";
     // Make request
-    completeRequest(requestFile, featuresString)
+    completeRequest(requestFile, featuresString, layer);
 });
 
 // FUNCTIONS
@@ -506,7 +515,7 @@ function reprojGeojson(Geojson) {
 // VARIABLES
 // Dictionary of WDM Values
 var wdmValues = {
-    null: " - ",
+    "": " - ",
     "1301": "Bundesautobahn",
     "1303": "Bundesstraße",
     "1305": "Landesstraße, Staatstraße",
@@ -517,13 +526,13 @@ var wdmValues = {
 }
 // Dictionary of ZUS Values
 var zusValues = {
-    null: " - ",
+    "": " - ",
     "2100": "Außer Betrieb, stillgelegt, verlassen",
     "4000": "Im Bau"
 }
 // Dictionary of HANDL Values
 var HANDLValues = {
-    null: " - ",
+    "": " - ",
     "a": "Erhaltung wie Bestand (normale Unterhaltung)",
     "b": "den Unterbau einschließende Sanierung (gleiche Kategorie)",
     "c": "Umbau / andere Bauweise (veränderte Kategorie)",
@@ -532,7 +541,7 @@ var HANDLValues = {
 }
 // Dictionary of ART Values
 var artValues = {
-    null: " - ",
+    "": " - ",
     "1103": "Fußweg",
     "1106": "Radweg",
     "1107": "Reitweg",
@@ -540,14 +549,14 @@ var artValues = {
 }
 // Dictionary of PRIO Values
 var PRIOValues = {
-    null: " - ",
+    "": " - ",
     "Kurzfristig": "Kurzfristig",
     "Mittelfristig": "Mittelfristig",
     "Langfristig": "Langfristig"
 }
 // Dictionary of ZUHPFL Values
 var ZUHPFLValues = {
-    null: " - ",
+    "": " - ",
     "Gemeinde": "Gemeinde",
     "Kreis": "Kreis",
     "Land": "Land",
@@ -558,7 +567,7 @@ var ZUHPFLValues = {
 }
 
 var ZWEGKATValues = {
-    null: " - ",
+    "": " - ",
     "a": 'A_klassifiziert',
     "b": "B_multifunktionaler Verbindungsweg",
     "c": "C_Hauptwirtschaftsweg",
@@ -570,8 +579,8 @@ var ZWEGKATValues = {
     "i": "I_Rad-, Reit-, Fußweg"
 }
 
-var FKTValues = {
-    null: " - ",
+var fktValues = {
+    "": " - ",
     "5211": "Hauptwirtschaftsweg",
     "5212": "Wirtschaftsweg"
 }
@@ -650,6 +659,26 @@ function showPopupEdit(feature, layer) {
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
+// Block other dropdowns when one is changed (for wdm, fkt and art)
+function blockOthers(e) {
+    var wdm = document.getElementById("wdm");
+    var art = document.getElementById("art");
+    var fkt = document.getElementById("fkt");
+    var changed = e.id;
+    var value = e.value;
+    
+    if ((changed == "wdm") && (value != "")) {
+        art.value = "";
+        fkt.value = "";
+    } else if ((changed == "art") && (value != "")) {
+        wdm.value = "";
+        fkt.value = "";
+    } else if ((changed == "fkt") && (value != "")) {
+        wdm.value = "";
+        art.value = "";
+    }
+}
+
 // Edit attribute
 function editAttribute () {
     var feature = wegSelected;
@@ -659,7 +688,6 @@ function editAttribute () {
         sidebar.open("edit-soll");
     }
     // Then fill attribute table
-    // Attributes that can't be changed
     // Select all table tags
     var entries = document.querySelectorAll("td");
     // Loop
@@ -667,9 +695,11 @@ function editAttribute () {
         var row = entries[i];
         // If row has an id
         if ((row.id != "") && (row.id != undefined)) {
-            // If it is WDM or ZUS get value from dictionary
             if (row.id != "LAENGE") {
-                var value = feature['feature']['properties'][row.id]; 
+                var value = feature['feature']['properties'][row.id];
+                if (value == null) {
+                    value = "";
+                } 
                 var values = null;
                 var id = row.id;
                 id = id.split("-")[0];
@@ -677,6 +707,9 @@ function editAttribute () {
                 row.innerHTML = window[values][value];
                 var select = document.getElementById(id);
                 var valueKorrigiert = feature['feature']['properties'][id];
+                if (valueKorrigiert == null) {
+                    valueKorrigiert = "";
+                }
                 select.value = valueKorrigiert;
                 // If it's length, round it
             } else if (row.id == "LAENGE") {
@@ -688,6 +721,13 @@ function editAttribute () {
     }
 };
 
+function createMiddleMarkers(line){
+	var latlngs = line.getLatLngs()[0];
+    var item = Math.floor(latlngs.length/2);
+    var newLatLng = latlngs[item];
+    L.marker(newLatLng).addTo(highlightLayer);
+}
+
 $('#edit-confirm').click(function() {
     var feature = wegSelected;
     // Select all table tags
@@ -697,13 +737,17 @@ $('#edit-confirm').click(function() {
         var row = entries[i];
         // If row has an id
         if ((row.id != "") && (row.id != undefined)) {
-            // If it is WDM or ZUS get value from dictionary
             if (row.id != "LAENGE") {
                 var id = row.id;
                 id = id.split("-")[0];
                 var oldValue = feature['feature']['properties'][id];
                 var select = document.getElementById(id);
                 var newValue = select.value;
+                if (newValue == "") {
+                    newValue = null;
+                }
+                console.log(typeof oldValue);
+                console.log(typeof newValue);
                 if (newValue != oldValue) {
                     feature['feature']['properties'][id] = newValue;
                     feature.setStyle(changed());
@@ -713,6 +757,7 @@ $('#edit-confirm').click(function() {
             }
         }
     }
+    // Style new categorie color
     var wegkat = feature['feature']['properties']['WEGKAT'];
     var zwegkat = feature['feature']['properties']['ZWEGKAT'];
     if (wegkat != zwegkat) {
@@ -720,7 +765,46 @@ $('#edit-confirm').click(function() {
             color: styles[zwegkat],
         })
     }
-    console.log(feature);
+    // Style that something changed
+    // Add attributes for change
+    var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
+    var attsChanged = 0;
+    for (var i in attribute) {
+        var att = attribute[i];
+        if (feature['feature']['properties'][att+'-ist'] != feature['feature']['properties'][att]) {
+            attsChanged = attsChanged + 1;
+        };
+    }
+    console.log(attsChanged);
+    if (attsChanged > 0) {
+        createMiddleMarkers(feature);
+        feature.setStyle({
+            weight: 5
+        });
+    } else {
+        var line = feature.geometry;
+        highlightLayer.eachLayer(function(marker) {
+            var point = marker.geometry;
+            var intersection = turf.intersect(line, point);
+            if (intersection) {
+                highlightLayer.removeLayer(marker);
+            }
+        })
+        feature.setStyle({
+            weight: 2
+        });
+    }
+    // Style ZUS
+    var zus = feature['feature']['properties']['zus'];
+    if (zus != "") {
+        feature.setStyle({
+            dashArray: '10'
+        });
+    } else {
+        feature.setStyle({
+            dashArray: null
+        });
+    }
 });
 
 // Function to show that layer has attributes changed

@@ -2,10 +2,6 @@
   <ows:Identifier>wwk_k</ows:Identifier>
   <wps:DataInputs>
     <wps:Input>
-      <ows:Identifier>vg_gemarkung</ows:Identifier>
-      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Avg_gemarkung&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
-    </wps:Input>
-    <wps:Input>
       <ows:Identifier>biomasse</ows:Identifier>
       <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Abiomasse&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
     </wps:Input>
@@ -85,8 +81,21 @@
       </wps:Data>
     </wps:Input>
     <wps:Input>
+      <ows:Identifier>ver06_l</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Aver06_l&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>V_OD_LFK_AKTI</ows:Identifier>
+      <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Afeldbloecke&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
       <ows:Identifier>gebaeude</ows:Identifier>
       <wps:Reference xlink:href="https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?service=WFS&amp;version=1.0.0&amp;request=GetFeature&amp;typeName=WWA%3Agebaeude_6_gemeinden&amp;outputFormat=application%2Fjson&amp;bbox=502584.3,5757482.8,513527.9,5766634.9,EPSG%3A25832" method="GET"/>
+    </wps:Input>
+    <wps:Input>
+      <ows:Identifier>selektion</ows:Identifier>
+      <wps:Data>
+      </wps:Data>
     </wps:Input>	
   </wps:DataInputs>
   <wps:ResponseForm>

@@ -18,6 +18,8 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
     <!-- Leaflet Sidebar -->
     <script type="text/javascript" src="src/leaflet-sidebar.js"></script>
+    <!-- Turf -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
     <!-- Autolinker -->
     <script src="src/Autolinker.min.js"></script>
     <!-- Proj4 -->
@@ -111,8 +113,8 @@
                     </tr>
                     <tr>
                         <td>Funktion:</td>
-                        <td id="FKT-ist"></td>
-                        <td><select id="FKT">
+                        <td id="fkt-ist"></td>
+                        <td><select id="fkt" onchange="blockOthers(this)">
                             <option value=""> - </option>
                             <option value="5211">Hauptwirtschaftsweg</option>
                             <option value="5212">Wirtschaftsweg</option>
@@ -121,7 +123,7 @@
                     <tr>
                         <td>Nutzung:</td>
                         <td id="art-ist"></td>
-                        <td><select id="art">
+                        <td><select id="art" onchange="blockOthers(this)">
                             <option value=""> - </option>
                             <option value="1103">Fußweg</option>
                             <option value="1106">Radweg</option>
@@ -132,7 +134,7 @@
                     <tr>
                         <td>Widmung:</td>
                         <td id="wdm-ist"></td>
-                        <td><select id="wdm">
+                        <td><select id="wdm" onchange="blockOthers(this)">
                             <option value=""> - </option>
                             <option value="1301">Bundesautobahn</option>
                             <option value="1303">Bundesstraße</option>
