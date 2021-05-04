@@ -2,6 +2,7 @@
 /// MAPS & GLOBAL VARIABLES
 ///
 
+// Map
 var map = L.map('map', {
     renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
 }).setView([52.01799,9.03725], 22);
@@ -11,16 +12,28 @@ var status = 'status'; // status of request
 var progress = '0'; // progress of request
 var geoJson = null; // geojson data
 var bbox = null; // current bounding box
-var gemeinde = null;
-var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
-var highlightLayer = L.geoJson().addTo(map);
+var gemeinde = null; // chosen gemeinde
+//var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
+var highlightLayer = L.Proj.geoJson(false, {
+    onEachFeature: highlightStyle
+}).addTo(map); // layer to show stroke on changed streets
 var wegeLayer = L.Proj.geoJson(false, {
     onEachFeature: showPopupEdit
 }).addTo(map); // layer to store categorized data
 var grundLayer = L.Proj.geoJson(false, {
     onEachFeature: showPopupEdit
 }).addTo(map); // layer to store grund data
-var wegSelected = null;
+var wegSelected = null; // variable to store active weg
+
+// Function to style stroke layer
+function highlightStyle(feature, layer) {
+    layer.setStyle({
+            weight: 7,
+            color: '#ffffff',
+            opacity: 0,
+            clickable: false,
+        });
+}
 
 // Set up Base-Layers for each Map
 // Set up Luftbild Layer
@@ -131,7 +144,7 @@ var json = (function() {
 
 // When a gemeinde is chosen
 function chooseGemeinde(e) {
-    selektion.features = [];
+    //selektion.features = [];
     gemeindeLayer.eachLayer(function(feat) {
         if (feat.feature.properties.name == e.value) {
             feat.setStyle(show());
@@ -143,12 +156,14 @@ function chooseGemeinde(e) {
             feat.setStyle(hide());
         }
     })
+    /*
     var features = gemeinde.features;
     for (var i = 0; i < features.length; i++) {
         if (features[i]["properties"]["name"] == e.value) {
             selektion.features.push(features[i]);
         }
     }
+    */
 }
 
 // Load test data categorized
@@ -271,8 +286,8 @@ function completeRequest(requestFile, features, layer) {
     // Replace bounding boxes
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
     // Add gemeinde grenzen
-    var grenzen = JSON.stringify(selektion);
-    sendRequest = sendRequest.replace(/hier das Polygon als Text/g, grenzen);
+    //var grenzen = JSON.stringify(selektion);
+    //sendRequest = sendRequest.replace(/hier das Polygon als Text/g, grenzen);
     // If we are sending features, add them too
     if (features) {
         console.log('sending features');
@@ -285,6 +300,7 @@ function completeRequest(requestFile, features, layer) {
     saveAs(new File([sendRequest], file, {
         type: "text/plain;charset=utf-8"
     }), file);
+
     
     // Make Request
     var ajax = $.ajax({
@@ -374,24 +390,29 @@ function getGeojson(url) {
 
 // Function to add result features into map
 function addGeojson(layer) {
+    // Clear highlight layer
+    highlightLayer.clearLayers();
+    // Add features to highlight layer
+    highlightLayer.addData(geoJson);
     // Clear layer
     window[layer].clearLayers();
     // Add features to layer
     window[layer].addData(geoJson);
     // Style features according to category
     if (layer == 'wegeLayer') {
+        map.removeLayer(grundLayer);
         styleKategorie();
     } else {
         styleGrund();
     }
     map.fitBounds(window[layer].getBounds());
-    console.log(window[layer]);
 }
 
+// Function to style Wege according to categories
 function styleKategorie() {
     wegeLayer.eachLayer(function(feature) {
         // Style features
-        var type = feature['feature']['properties']['WEGKAT'];
+        var type = feature['feature']['properties']['ZWEGKAT'];
         feature.setStyle({
             color: styles[type],
             weight: 2,
@@ -403,11 +424,12 @@ function styleKategorie() {
             var att = attribute[i];
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
         }
-        // ZWEGKAT == WEGKAT
-        feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
+        // Delete grundlayer attribut
+        feature['feature']['properties']['grundLayer'] = false;
     });
 }
 
+// Function to style Wege according to grund attribute
 function styleGrund() {
     grundLayer.eachLayer(function(feature) {
         // Style features
@@ -448,8 +470,6 @@ function styleGrund() {
             feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
         }
         feature['feature']['properties']['grundLayer'] = true;
-        // ZWEGKAT == WEGKAT
-        feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
     });
 }
 
@@ -464,22 +484,22 @@ $('#recalculate').click(function() {
     var features = grundLayer.toGeoJSON();
     // Reproject coordinates
     reprojGeojson(features);
-    features['crs'] = { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } };
-    console.log(features);
+    // Add CRS
+    let keyValues = Object.entries(features); 
+    keyValues.splice(1,0, ["crs", { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }]); 
+    let newObj = Object.fromEntries(keyValues)
     // Stringify
-    var featuresString = JSON.stringify(features);
-    console.log(featuresString);
-    /*
+    var featuresString = JSON.stringify(newObj);
     // Request file for re-categorization
     var requestFile = "src/request4_store_edited.xml";
     // Get bounds of layer
-    var bounds = grundLayer.getBounds();
+    //var bounds = grundLayer.getBounds();
     // Calculate bounding box 
-    getBbox(bounds);
+    //getBbox(bounds);
+    // Layer to add response to
     var layer = "wegeLayer";
     // Make request
     completeRequest(requestFile, featuresString, layer);
-    */
 });
 
 // FUNCTIONS
@@ -573,7 +593,7 @@ var ZUHPFLValues = {
     "Juristichen Personen des Privatrechts": "Juristichen Personen des Privatrechts",
     "Sonstige": "Sonstige"
 }
-
+// Dictionary of ZWEGKAT Values
 var ZWEGKATValues = {
     "": " - ",
     "a": 'A_klassifiziert',
@@ -586,7 +606,7 @@ var ZWEGKATValues = {
     "h": "H_keine Funktion",
     "i": "I_Rad-, Reit-, Fußweg"
 }
-
+// Dictionary of WEGKAT Values
 var WEGKATValues = {
     "": " - ",
     "a": 'A_klassifiziert',
@@ -599,7 +619,7 @@ var WEGKATValues = {
     "h": "H_keine Funktion",
     "i": "I_Rad-, Reit-, Fußweg"
 }
-
+// Dictionary of fkt Values
 var fktValues = {
     "": " - ",
     "5211": "Hauptwirtschaftsweg",
@@ -607,13 +627,6 @@ var fktValues = {
 }
 
 // FUNCTIONS
-// Onclick function
-function onclick(feature, layer) {
-    layer.on({
-        click: attributes
-    });
-}
-
 // Function to show Popup with attribute (SOLL)
 var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
 function showPopupEdit(feature, layer) {
@@ -700,7 +713,7 @@ function blockOthers(e) {
     }
 }
 
-// Edit attribute
+// Function to show attributes in the table when a Weg is clicked
 function editAttribute () {
     var feature = wegSelected;
     if (feature['feature']['properties']['grundLayer']) {
@@ -742,7 +755,8 @@ function editAttribute () {
     }
 };
 
-$('#edit-confirm').click(function() {
+// Function to change attributes when edit is confirmed
+function confirmEdit () {
     var feature = wegSelected;
     // Select all table tags
     var entries = document.querySelectorAll("td");
@@ -766,16 +780,7 @@ $('#edit-confirm').click(function() {
             }
         }
     }
-    // Style new categorie color
-    var wegkat = feature['feature']['properties']['WEGKAT'];
-    var zwegkat = feature['feature']['properties']['ZWEGKAT'];
-    if (wegkat != zwegkat) {
-        feature.setStyle({
-            color: styles[zwegkat],
-        })
-    }
     // Style that something changed
-    // Add attributes for change
     var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
     var attsChanged = 0;
     for (var i in attribute) {
@@ -786,33 +791,23 @@ $('#edit-confirm').click(function() {
     }
     console.log(attsChanged);
     if (attsChanged > 0) {
-        highlightLayer.addData(feature.feature, {
-            style: {
-                weight: 10,
-                color: '#ffffff'
-            }
-        });
-        console.log(highlightLayer);
-        /*
-        feature.setStyle({
-            weight: 5
-        });
-        */
-    } else {
-        /*
-        var line = feature.geometry;
-        highlightLayer.eachLayer(function(marker) {
-            var point = marker.geometry;
-            var intersection = turf.intersect(line, point);
+        highlightLayer.eachLayer(function(hFeature) {
+            var hLine = hFeature.feature;
+            var sLine = feature.feature;
+            var intersection = (hLine.geometry == sLine.geometry);
             if (intersection) {
-                highlightLayer.removeLayer(marker);
+                hFeature.setStyle(show());
             }
         })
-        
-        feature.setStyle({
-            weight: 2
-        });
-        */
+    } else {
+        highlightLayer.eachLayer(function(hFeature) {
+            var hLine = hFeature.feature;
+            var sLine = feature.feature;
+            var intersection = (hLine.geometry == sLine.geometry);
+            if (intersection) {
+                hFeature.setStyle(hide());
+            }
+        })
     }
     // Style ZUS
     var zus = feature['feature']['properties']['zus'];
@@ -825,7 +820,7 @@ $('#edit-confirm').click(function() {
             dashArray: null
         });
     }
-});
+};
 
 // Function to show that layer has attributes changed
 function changed() {
@@ -838,6 +833,20 @@ function notChanged() {
     return {
         dashArray: null,
     }
+}
+
+// Turn Layers on and off
+// Function to show layer
+function show() {
+    return {
+        opacity: 1,
+    };
+}
+// Function to hide layer
+function hide() {
+    return {
+        opacity: 0,
+    };
 }
 
 // Hide Table when click outside of map

@@ -29,10 +29,9 @@
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <!-- XML Parser Library -->
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
-    <script type="text/javascript" src="src/json2xml.js"></script>
     <!-- FileSaver -->
     <script type="text/javascript" src="src/FileSaver.js"></script>
-    <!-- -------Geocoder Search-Bar------->
+    <!-- Geocoder Search-Bar -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <!-- ProgressBar -->
@@ -156,7 +155,7 @@
                     </tr>
                 </table>
                 
-                <button class="button" id="edit-confirm">Confirm</button>
+                <button class="button" id="edit-confirm" onclick="confirmEdit()">Confirm</button>
             
             </div>
 
@@ -239,7 +238,7 @@
                     </tr>
                 </table>
             
-                <button class="button" id="edit-confirm">Confirm</button>
+                <button class="button" id="edit-confirm" onclick="confirmEdit()">Confirm</button>
 
             </div>
 
