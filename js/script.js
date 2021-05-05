@@ -12,9 +12,13 @@ var status = 'status'; // status of request
 var progress = '0'; // progress of request
 var geoJson = null; // geojson data
 var bbox = null; // current bounding box
+var grundBbox = null;
 var gemeinde = null; // chosen gemeinde
 //var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
 var highlightLayer = L.Proj.geoJson(false, {
+    onEachFeature: highlightStyle
+}).addTo(map);
+var highlightGrund = L.geoJSON(false, {
     onEachFeature: highlightStyle
 }).addTo(map); // layer to show stroke on changed streets
 var wegeLayer = L.Proj.geoJson(false, {
@@ -49,6 +53,13 @@ var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_d
     minZoom: 6,
 }).addTo(map);
 
+var baseMaps = [{
+    active: true,
+    name: "NRW Luftbild",
+    layer: NRW_Luftbild_Map
+}
+];
+
 // Geocoder
 var osmGeocoder = new L.Control.Geocoder({
     collapsed: true,
@@ -59,6 +70,10 @@ var osmGeocoder = new L.Control.Geocoder({
 
 // Sidebar
 var sidebar = L.control.sidebar('sidebar').addTo(map);
+
+// Layer Controls
+var panelControl = new L.Control.PanelLayers(baseMaps);
+map.addControl(panelControl);
 
 // ProgressBar
 var bar = new ProgressBar.Line(container, {
@@ -156,14 +171,6 @@ function chooseGemeinde(e) {
             feat.setStyle(hide());
         }
     })
-    /*
-    var features = gemeinde.features;
-    for (var i = 0; i < features.length; i++) {
-        if (features[i]["properties"]["name"] == e.value) {
-            selektion.features.push(features[i]);
-        }
-    }
-    */
 }
 
 // Load test data categorized
@@ -181,29 +188,39 @@ $('#test').click(function() {
         }
         });
         geoJson = json;
-        var layer = 'wegeLayer';
+        var layer = 'wege';
         addGeojson(layer);
     })();
 })
 
 // Load test grund daten
 $('#test-grund').click(function() {
-    // Add layers from file
-    var json = (function() {
-        var json = null;
-        $.ajax({
-        'async': false,
-        'global': false,
-        'url': "data/ist.geojson",
-        'dataType': "json",
-        'success': function(data) {
-            json = data;
+    var owsrootUrl = 'https://geoserver.livinglab-essigfabrik.online/geoserver/wfs';
+
+    var defaultParameters = {
+        service : 'WFS',
+        version : '2.0',
+        request : 'GetFeature',
+        typeName : [('ver01_l'),('ver02_l')],
+        outputFormat : 'text/javascript',
+        format_options : 'callback:getJson',
+        SrsName : 'EPSG:4326',
+        bbox: grundBbox,
+    };
+
+    var parameters = L.Util.extend(defaultParameters);
+    var URL = owsrootUrl + L.Util.getParamString(parameters);
+
+    var ajax = $.ajax({
+        url : URL,
+        dataType : 'jsonp',
+        jsonpCallback : 'getJson',
+        success : function (response) {
+            var layer = 'grund';
+            geoJson = response;
+            createLayers(layer);
         }
-        });
-        geoJson = json;
-        var layer = 'grundLayer';
-        addGeojson(layer);
-    })();
+    });
 })
 
 // Download geojson to machine
@@ -223,7 +240,7 @@ $('#download').click(function() {
 // WPS Url
 var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
 // Layer Styles
-var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
+var wegeStyles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
 var grundStyles = {
     'Klassifizierte Straße': '#C00000',
     'Kein Attribut': '#ED7D31',
@@ -252,6 +269,9 @@ $('#request-exe').click(function() {
 // FUNCTIONS
 // Function to calculate bounding box
 function getBbox(bounds) {
+
+    grundBbox = bounds.toBBoxString()+',EPSG:4326';
+
     /// Calculate map bounding box ///
     var swLng = bounds.getSouthWest().lng;
     var swLat = bounds.getSouthWest().lat;
@@ -285,22 +305,13 @@ function completeRequest(requestFile, features, layer) {
     var requestData = requestHttp.parse();
     // Replace bounding boxes
     var sendRequest = requestData.replace(/502584.3,5757482.8,513527.9,5766634.9/g, bbox);
-    // Add gemeinde grenzen
-    //var grenzen = JSON.stringify(selektion);
-    //sendRequest = sendRequest.replace(/hier das Polygon als Text/g, grenzen);
     // If we are sending features, add them too
-    
     if (features) {
         console.log('sending features');
         sendRequest = sendRequest.replace(/hier die editierten Ergebnisdaten im JSON-Format/g, features);
     } else {
         console.log('getting features');
     }
-    
-    var file = 'requestwithfeatures.txt';
-    saveAs(new File([sendRequest], file, {
-        type: "text/plain;charset=utf-8"
-    }), file);
     
     // Make Request
     var ajax = $.ajax({
@@ -354,7 +365,6 @@ function completeRequest(requestFile, features, layer) {
             console.log(thrownError);
         }
     });
-
 }
 
 // Function to ask for process status
@@ -389,6 +399,228 @@ function getGeojson(url) {
     geoJson = answer;
 };
 
+var wegeKategorien = [
+    {
+        group: "Gruppe 1",
+        layers: [
+            {
+                name: 'Kategorie A',
+                property: 'ZWEGKAT',
+                value: 'a',
+                icon: '<i class="icon icon-a"></i>'
+            },
+            {
+                name: 'Kategorie B',
+                property: 'ZWEGKAT',
+                value: 'b',
+                icon: '<i class="icon icon-b"></i>'
+            },
+            {
+                name: 'Kategorie C',
+                property: 'ZWEGKAT',
+                value: 'c',
+                icon: '<i class="icon icon-c"></i>'
+            },
+            {
+                name: 'Kategorie D',
+                property: 'ZWEGKAT',
+                value: 'd',
+                icon: '<i class="icon icon-d"></i>'
+            },
+        ] 
+    },
+    {
+        group: "Gruppe 2",
+        layers: [
+            {
+                name: 'Kategorie E',
+                property: 'ZWEGKAT',
+                value: 'e',
+                icon: '<i class="icon icon-e"></i>'
+            },
+            {
+                name: 'Kategorie F',
+                property: 'ZWEGKAT',
+                value: 'f',
+                icon: '<i class="icon icon-f"></i>'
+            },
+            {
+                name: 'Kategorie G',
+                property: 'ZWEGKAT',
+                value: 'g',
+                icon: '<i class="icon icon-g"></i>'
+            },
+            {
+                name: 'Kategorie H',
+                property: 'ZWEGKAT',
+                value: 'h',
+                icon: '<i class="icon icon-h"></i>'
+            },
+            {
+                name: 'Kategorie I',
+                property: 'ZWEGKAT',
+                value: 'i',
+                icon: '<i class="icon icon-i"></i>'
+            },
+        ]
+    }
+];
+var wegeLayers = {};
+
+var grundKategorien = [
+	{
+		name: 'Klassifizierte Straße',
+		property: 'wdm',
+		value: ['1301','1303','1305','1306','1307'],
+		icon: '<i class="icon icon-classified"></i>'
+	},
+	{
+		name: 'Kein Attribut',
+		property: 'wdm',
+		value: ['9997'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Hauptwirtschaftsweg',
+		property: 'fkt',
+		value: ['5211'],
+		icon: '<i class="icon icon-hww"></i>'
+	},
+	{
+		name: 'Wirtschaftsweg',
+		property: 'fkt',
+		value: ['5212'],
+		icon: '<i class="icon icon-ww"></i>'
+	},
+	{
+		name: 'Reitweg',
+		property: 'art',
+		value: ['1107'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Fußweg',
+		property: 'art',
+		value: ['1103'],
+		icon: '<i class="icon icon-fussw"></i>'
+	},
+	{
+		name: 'Radweg',
+		property: 'art',
+		value: ['1106'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Fuß- und Radweg',
+		property: 'wdm',
+		value: ['1110'],
+        icon: '<i class="icon icon-rufw"></i>'
+	}
+];
+var grundLayers = {};
+
+function createLayers(layer) {
+    var strassenKategorien = window[layer + 'Kategorien'];
+    var strassenLayers = window[layer + 'Layers'];
+    var styles = window[layer + 'Styles'];
+    if (layer == 'wege') {
+        for (group of strassenKategorien) {
+            for (kat of group['layers']) {
+                strassenLayers[kat] = L.Proj.geoJson(geoJson, {
+                    filter: function(feature, layer) {
+                        return feature.properties[kat['property']] == kat['value'];
+                    },
+                    onEachFeature: showPopupEdit,
+                    style: {
+                        color: styles[kat['value']],
+                        weight: 2,
+                        opacity: 1,
+                    }
+                }).addTo(map);
+                strassenLayers[kat].eachLayer(function(feature) {
+                    // Add attributes for change
+                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
+                    for (var i in attribute) {
+                        var att = attribute[i];
+                        if (att in feature.feature.properties) {
+                            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
+                        } else {
+                            feature['feature']['properties'][att] = null;
+                            feature['feature']['properties'][att+'-ist'] = null;
+                        }
+                    }
+                    feature['feature']['properties']['grundLayer'] = false;
+                    var zus = feature['feature']['properties']['zus'];
+                    if (zus != null) {
+                        feature.setStyle({
+                            dashArray: '10'
+                        });
+                    } else {
+                        feature.setStyle({
+                            dashArray: null
+                        });
+                    }
+                });
+                panelControl.addOverlay({
+                    active: true,
+                    layer: strassenLayers[kat],
+                    icon: kat['icon']
+                },
+                kat['name'],
+                group['group']
+            );
+            }
+        }
+    } else {
+        highlightGrund.addData(geoJson);
+        for (kat of strassenKategorien) {
+            strassenLayers[kat] = L.geoJSON(geoJson, {
+                filter: function(feature, layer) {
+                    return kat['value'].includes(feature.properties[kat['property']]);
+                },
+                onEachFeature: showPopupGrund,
+                style: {
+                        color: styles[kat['name']],
+                        weight: 2,
+                        opacity: 1,
+                }
+            }).addTo(map);
+            strassenLayers[kat].eachLayer(function(feature) {
+                // Add attributes for change
+                var attribute = ['wdm', 'fkt', 'art', 'zus'];
+                for (var i in attribute) {
+                    var att = attribute[i];
+                    if (att in feature.feature.properties) {
+                        feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
+                    } else {
+                        feature['feature']['properties'][att] = null;
+                        feature['feature']['properties'][att+'-ist'] = null;
+                    }
+                }
+                feature['feature']['properties']['grundLayer'] = true;
+                var zus = feature['feature']['properties']['zus'];
+                if (zus != null) {
+                    feature.setStyle({
+                        dashArray: '10'
+                    });
+                } else {
+                    feature.setStyle({
+                        dashArray: null
+                    });
+                }
+            });
+            panelControl.addOverlay({
+                active: true,
+                layer: strassenLayers[kat],
+                icon: kat['icon']
+            },
+            kat['name'],
+            'Wegenetz'
+        );
+        }
+    }
+}
+
 // Function to add result features into map
 function addGeojson(layer) {
     // Clear highlight layer
@@ -396,17 +628,8 @@ function addGeojson(layer) {
     // Add features to highlight layer
     highlightLayer.addData(geoJson);
     // Clear layer
-    window[layer].clearLayers();
-    // Add features to layer
-    window[layer].addData(geoJson);
-    // Style features according to category
-    if (layer == 'wegeLayer') {
-        map.removeLayer(grundLayer);
-        styleKategorie();
-    } else {
-        styleGrund();
-    }
-    map.fitBounds(window[layer].getBounds());
+    createLayers(layer);
+    map.fitBounds(highlightLayer.getBounds());
 }
 
 // Function to style Wege according to categories
@@ -430,82 +653,35 @@ function styleKategorie() {
     });
 }
 
-// Function to style Wege according to grund attribute
-function styleGrund() {
-    grundLayer.eachLayer(function(feature) {
-        // Style features
-        var layer = null;
-        var wdm = feature['feature']['properties']['wdm'];
-        var fkt = feature['feature']['properties']['fkt'];
-        var art = feature['feature']['properties']['art'];
-        var zus = feature['feature']['properties']['zus'];
-        if (wdm != null) {
-            if (wdm == '9997') {
-                layer = 'Kein Attribut';
-            } else {
-                layer = 'Klassifizierte Straße';
-            }
-        } else if (fkt != null) {
-            layer = fktValues[fkt];
-        } else if (art != null) {
-            layer = artValues[art];
-        }
-        if (zus != null) {
-            feature.setStyle({
-                color: grundStyles[layer],
-                weight: 2,
-                opacity: 1,
-                dashArray: '5',
-            });
-        } else {
-            feature.setStyle({
-                color: grundStyles[layer],
-                weight: 2,
-                opacity: 1,
-            });
-        }
-        // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
-        for (var i in attribute) {
-            var att = attribute[i];
-            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
-        }
-        feature['feature']['properties']['grundLayer'] = true;
-    });
-}
-
 /// 
 /// REQUEST TO RE-CATEGORIZE
 ///
 
 // TRIGGER
-// When button is clicked, re-categorize streets
+// When button is clicked categorize streets
 $('#recalculate').click(function() {
-    // Clear FKT_PEE and FKT_WA
-    /*
-    grundLayer.eachLayer(function(feature) {
-        feature['feature']['properties']['FKT_PEE'] = null;
-        feature['feature']['properties']['FKT_WA'] = null;
-    })
-    */
     // Save layer as geojson
-    var features = grundLayer.toGeoJSON();
-    // Reproject coordinates
-    reprojGeojson(features);
-    // Add CRS
-    let keyValues = Object.entries(features); 
-    keyValues.splice(1,0, ["crs", { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }]); 
-    let newObj = Object.fromEntries(keyValues)
+    var json = {
+		"type": "FeatureCollection",
+		"name": "name",
+		"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } },
+		"features": []
+	}
+    map.eachLayer(function(layer){
+        console.log(layer);
+        /*
+        var geojson = layer.toGeoJSON();
+        reprojGeojson(geojson);
+        json.features.concat(geojson.features)
+        */
+    });
+    console.log(json);
     // Stringify
-    var featuresString = JSON.stringify(newObj);
+    var featuresString = JSON.stringify(json);
     // Request file for re-categorization
     var requestFile = "src/request4_store_edited.xml";
-    // Get bounds of layer
-    //var bounds = grundLayer.getBounds();
-    // Calculate bounding box 
-    //getBbox(bounds);
     // Layer to add response to
-    var layer = "wegeLayer";
+    var layer = "wege";
     // Make request
     completeRequest(requestFile, featuresString, layer);
 });
@@ -635,7 +811,7 @@ var fktValues = {
 }
 
 // FUNCTIONS
-// Function to show Popup with attribute (SOLL)
+// Function to show Popup in the categorized data
 var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
 function showPopupEdit(feature, layer) {
     layer.on({
@@ -697,6 +873,39 @@ function showPopupEdit(feature, layer) {
             </table>\
             <br>\
             <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
+    }
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
+
+// Function to show Popup in the grund data
+function showPopupGrund(feature, layer) {
+    layer.on({
+        click: function() {
+            wegSelected = layer;
+            var sidebarStatus = document.getElementById("sidebar").className;
+            if (sidebarStatus == 'sidebar sidebar-left leaflet-touch') {
+                editGrundAttribute();
+            }
+        }
+    });
+    if ("sts" in feature.properties) {
+        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+            <tr>\
+                <th scope="row">Straßenname: </th>\
+                <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+            </tr>\
+        </table>\
+        <br>\
+        <button class="button" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
+    } else {
+        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+                <tr>\
+                    <th scope="row">Straßenname: </th>\
+                    <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+                </tr>\
+            </table>\
+            <br>\
+            <button class="button" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
     }
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
@@ -763,11 +972,119 @@ function editAttribute () {
     }
 };
 
+// Function to show attributes in the table when a Weg is clicked
+function editGrundAttribute () {
+    var feature = wegSelected;
+    console.log(feature);
+    if (feature['feature']['properties']['grundLayer']) {
+        sidebar.open("edit-grund");
+    } else {
+        sidebar.open("edit-soll");
+    }
+    // Then fill attribute table
+    // Select all table tags
+    var entries = document.querySelectorAll("td");
+    var attribute = ['wdm-ist', 'fkt-ist', 'art-ist', 'zus-ist'];
+    // Loop
+    for (var i in entries) {
+        var row = entries[i];
+        // If row has an id
+        if ((row.id != "") && (row.id != undefined)) {
+            if (attribute.includes(row.id)) {
+                var value = feature['feature']['properties'][row.id];
+                if (value == null) {
+                    value = "";
+                } 
+                var values = null;
+                var id = row.id;
+                id = id.split("-")[0];
+                values = id + "Values";
+                row.innerHTML = window[values][value];
+                var select = document.getElementById(id);
+                var valueKorrigiert = feature['feature']['properties'][id];
+                if (valueKorrigiert == null) {
+                    valueKorrigiert = "";
+                }
+                select.value = valueKorrigiert;
+            } 
+        }
+    }
+};
+
+// Function to change attributes when edit is confirmed
+function confirmEditGrund () {
+    var feature = wegSelected;
+    // Select all table tags
+    var entries = document.querySelectorAll("td");
+    var attribute = ['wdm-ist', 'fkt-ist', 'art-ist', 'zus-ist'];
+    // Loop
+    for (var i in entries) {
+        var row = entries[i];
+        // If row has an id
+        if ((row.id != "") && (row.id != undefined)) {
+            if (attribute.includes(row.id)) {
+                var id = row.id;
+                id = id.split("-")[0];
+                var oldValue = feature['feature']['properties'][id];
+                var select = document.getElementById(id);
+                var newValue = select.value;
+                if (newValue == "") {
+                    newValue = null;
+                }
+                if (newValue != oldValue) {
+                    feature['feature']['properties'][id] = newValue;
+                }
+            }
+        }
+    }
+    // Style that something changed
+    var attributen = ['wdm', 'fkt', 'art', 'zus'];
+    var attsChanged = 0;
+    for (var i in attributen) {
+        var att = attributen[i];
+        if (feature['feature']['properties'][att+'-ist'] != feature['feature']['properties'][att]) {
+            attsChanged = attsChanged + 1;
+        };
+    }
+    console.log(attsChanged);
+    if (attsChanged > 0) {
+        highlightGrund.eachLayer(function(hFeature) {
+            var hLine = hFeature.feature;
+            var sLine = feature.feature;
+            var intersection = (hLine.geometry == sLine.geometry);
+            if (intersection) {
+                hFeature.setStyle(show());
+            }
+        })
+    } else {
+        highlightGrund.eachLayer(function(hFeature) {
+            var hLine = hFeature.feature;
+            var sLine = feature.feature;
+            var intersection = (hLine.geometry == sLine.geometry);
+            if (intersection) {
+                hFeature.setStyle(hide());
+            }
+        })
+    }
+    // Style ZUS
+    var zus = feature['feature']['properties']['zus'];
+    if (zus != null) {
+        feature.setStyle({
+            dashArray: '10'
+        });
+    } else {
+        feature.setStyle({
+            dashArray: null
+        });
+    }
+};
+
 // Function to change attributes when edit is confirmed
 function confirmEdit () {
     var feature = wegSelected;
     // Select all table tags
     var entries = document.querySelectorAll("td");
+    var attribute = ['HANDL-ist', 'PRIO-ist', 'ZUHPFL-ist', 'ZWEGKAT-ist', 'WEGKAT-ist'];
     // Loop
     for (var i in entries) {
         var row = entries[i];
@@ -789,10 +1106,10 @@ function confirmEdit () {
         }
     }
     // Style that something changed
-    var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT'];
+    var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
     var attsChanged = 0;
-    for (var i in attribute) {
-        var att = attribute[i];
+    for (var i in attributen) {
+        var att = attributen[i];
         if (feature['feature']['properties'][att+'-ist'] != feature['feature']['properties'][att]) {
             attsChanged = attsChanged + 1;
         };
@@ -817,17 +1134,11 @@ function confirmEdit () {
             }
         })
     }
-    // Style ZUS
-    var zus = feature['feature']['properties']['zus'];
-    if (zus != null) {
-        feature.setStyle({
-            dashArray: '10'
-        });
-    } else {
-        feature.setStyle({
-            dashArray: null
-        });
-    }
+    // Style Kategorie
+    feature.setStyle({
+        color: wegeStyles[feature['feature']['properties']['ZWEGKAT']]
+    });
+    console.log(feature);
 };
 
 // Function to show that layer has attributes changed

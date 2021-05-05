@@ -8,13 +8,15 @@
     <!-- My Styles -->
     <link rel="stylesheet" href="style.css" />
     <!-- Leaflet Sidebar Style -->
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" integrity="sha512-1xoFisiGdy9nvho8EgXuXvnpR5GAMSjFwp40gSRE3NwdUdIMIKuPa7bqoUhLD0O/5tPNhteAsE5XyyMi5reQVA==" crossorigin="anonymous">
     <link rel="stylesheet" href="leaflet-sidebar.css" />
+    <link rel="stylesheet" href="leaflet-panel-layers.css" />
+    <link rel="stylesheet" href="icons.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous">
 
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,400,300,500,600,700" rel="stylesheet">
     <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
     <!-- Leaflet Sidebar -->
     <script type="text/javascript" src="src/leaflet-sidebar.js"></script>
@@ -36,6 +38,7 @@
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <!-- ProgressBar -->
     <script type="text/javascript" src="src/progressbar.js"></script>
+    <script src="src/leaflet-panel-layers.js"></script>
 
 </head>
 
@@ -77,9 +80,7 @@
                     <option value="Leopoldshöhe">Leopoldshöhe</option>
                 </select>
 
-                <button class="button" id="request-exe">Grund Daten Laden</button>
-
-                <button class="button" id="test-grund">Test Grund Daten Laden</button>
+                <button class="button" id="test-grund">Grund Daten Laden</button>
 
                 <div id="container"></div>
 
@@ -155,7 +156,7 @@
                     </tr>
                 </table>
                 
-                <button class="button" id="edit-confirm" onclick="confirmEdit()">Confirm</button>
+                <button class="button" id="edit-confirm" onclick="confirmEditGrund()">Confirm</button>
             
             </div>
 
