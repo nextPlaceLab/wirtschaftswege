@@ -289,6 +289,7 @@ function completeRequest(requestFile, features, layer) {
     //var grenzen = JSON.stringify(selektion);
     //sendRequest = sendRequest.replace(/hier das Polygon als Text/g, grenzen);
     // If we are sending features, add them too
+    
     if (features) {
         console.log('sending features');
         sendRequest = sendRequest.replace(/hier die editierten Ergebnisdaten im JSON-Format/g, features);
@@ -300,7 +301,6 @@ function completeRequest(requestFile, features, layer) {
     saveAs(new File([sendRequest], file, {
         type: "text/plain;charset=utf-8"
     }), file);
-
     
     // Make Request
     var ajax = $.ajax({
@@ -354,6 +354,7 @@ function completeRequest(requestFile, features, layer) {
             console.log(thrownError);
         }
     });
+
 }
 
 // Function to ask for process status
@@ -480,6 +481,13 @@ function styleGrund() {
 // TRIGGER
 // When button is clicked, re-categorize streets
 $('#recalculate').click(function() {
+    // Clear FKT_PEE and FKT_WA
+    /*
+    grundLayer.eachLayer(function(feature) {
+        feature['feature']['properties']['FKT_PEE'] = null;
+        feature['feature']['properties']['FKT_WA'] = null;
+    })
+    */
     // Save layer as geojson
     var features = grundLayer.toGeoJSON();
     // Reproject coordinates
