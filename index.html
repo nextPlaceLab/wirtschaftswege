@@ -31,6 +31,14 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
+    <!-- -------Leaflet Panel-Layers------->
+    <link rel="stylesheet" href="src/leaflet-panel-layers.css" />
+    <script src="src/leaflet-panel-layers.js"></script>
+
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+   
+
 </head>
 
 <body>
@@ -215,6 +223,13 @@
 
             <button class="button" id="edit-confirm">Confirm</button>
 
+            <!-- Sumup button (Dieser Button kann bei "Vergleichen" ins Layout gepackt werden oder vielleicht auch automatisch berechnen...) -->
+
+            <button class="button" id="sumup">Sumup</button>
+            
+            <!-- Create a div where the graph will take place (In das "Vergleichen" Panel packen) -->
+            <div id="my_dataviz"></div>
+
         </div>
 
         <!-- SOLL Karte -->
@@ -250,12 +265,18 @@
                 <button class="button" id="compare" style="float: right; margin-right: 10px">Vergleichen</button>
                 <button class="button" id="recalculate" style="float: right; margin-right: 10px">Neu Kategorisieren</button>
             </div>
+
+
+
         </div>
 
     </div>
 
     <!-- Script -->
     <script src="js/script.js"></script>
+
+
+
 
 </body>
 
