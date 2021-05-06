@@ -4,8 +4,22 @@
 
 // Map
 var map = L.map('map', {
-    renderer: L.canvas({ tolerance: 10 }) // Set up tolerance for easier selection
-}).setView([52.01799,9.03725], 22);
+    renderer: L.canvas({ tolerance: 10 }), // Set up tolerance for easier selection
+    center: [52.01799,9.03725],
+    zoom: 18,
+    maxZoom: 18,
+});
+
+// Default projections to convert from/to
+proj4.defs([
+    [
+      'EPSG:4326',
+      '+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'],
+    [
+      'EPSG:25832',
+      '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+    ]
+]);
 
 // Global Variables
 var status = 'status'; // status of request
@@ -14,51 +28,24 @@ var geoJson = null; // geojson data
 var bbox = null; // current bounding box
 var grundBbox = null;
 var gemeinde = null; // chosen gemeinde
-//var selektion = {"type": "FeatureCollection", "name": "grenzen", "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } }, "features": []}; // current gemeinde grenzen
 var highlightLayer = L.Proj.geoJson(false, {
     onEachFeature: highlightStyle
 }).addTo(map);
 var highlightGrund = L.geoJSON(false, {
     onEachFeature: highlightStyle
 }).addTo(map); // layer to show stroke on changed streets
-var wegeLayer = L.Proj.geoJson(false, {
-    onEachFeature: showPopupEdit
-}).addTo(map); // layer to store categorized data
-var grundLayer = L.Proj.geoJson(false, {
-    onEachFeature: showPopupEdit
-}).addTo(map); // layer to store grund data
 var wegSelected = null; // variable to store active weg
+var owsrootUrl = 'https://geoserver.livinglab-essigfabrik.online/geoserver/wfs';
 
-// Function to style stroke layer
+// Function to style stroke layers
 function highlightStyle(feature, layer) {
     layer.setStyle({
             weight: 7,
             color: '#ffffff',
             opacity: 0,
             clickable: false,
-        });
+    });
 }
-
-// Set up Base-Layers for each Map
-// Set up Luftbild Layer
-var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
-    layers: 'nw_dop_rgb',
-    format: 'image/png',
-    version: '1.1.0',
-    transparent: true,
-    opacity: 0.5,
-    attribution: "",
-    tiled: true,
-    maxZoom: 22,
-    minZoom: 6,
-}).addTo(map);
-
-var baseMaps = [{
-    active: true,
-    name: "NRW Luftbild",
-    layer: NRW_Luftbild_Map
-}
-];
 
 // Geocoder
 var osmGeocoder = new L.Control.Geocoder({
@@ -71,9 +58,224 @@ var osmGeocoder = new L.Control.Geocoder({
 // Sidebar
 var sidebar = L.control.sidebar('sidebar').addTo(map);
 
+// Set up Base-Layers 
+// Set up Luftbild Layer
+var NRW_Luftbild_Map = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", {
+    layers: 'nw_dop_rgb',
+    format: 'image/png',
+    version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+}).addTo(map);
+// Set up Amtliche Basiskarte Layer
+var ABK_Layer = L.tileLayer.wms("https://www.wms.nrw.de/geobasis/wms_nw_dtk", {
+    layers: 'wms_nw_dtk',
+    format: 'image/png',
+    //version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+});
+// Set up OSM tile layer 
+var OSM_Layer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'mapbox/light-v10',
+    tileSize: 512,
+    zoomOffset: -1,
+    accessToken: 'pk.eyJ1IjoiYWJqYXJkaW0iLCJhIjoiY2tmZmpyM3d3MGZkdzJ1cXZ3a3kza3BybiJ9.2CgI2GbcJysBRHmh7WwdVA'
+});
+
+// Set up Info-Layers 
+// Set up Feldblöcke Layer
+var Feldbloecke = L.tileLayer.wms("https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?", {
+    layers: 'WWA:feldbloecke',
+    format: 'image/png',
+    //version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+});
+// Set up Gesamtwegenetz Layer
+var Gesamtwegenetz = L.tileLayer.wms("https://geoserver.livinglab-essigfabrik.online/geoserver/WWA/ows?", {
+    layers: ['ver01_l','ver02_l'],
+    format: 'image/png',
+    //version: '1.1.0',
+    transparent: true,
+    opacity: 0.5,
+    attribution: "",
+    tiled: true,
+    maxZoom: 22,
+    minZoom: 6,
+});
+
+// Add gemeinde from file
+var gemeindeLayer = L.Proj.geoJson().addTo(map);
+var json = (function() {
+    var json = null;
+    $.ajax({
+      'async': false,
+      'global': false,
+      'url': "data/gemeinde.geojson",
+      'dataType': "json",
+      'success': function(data) {
+          json = data;
+      }
+    });
+    gemeinde = json;
+    gemeindeLayer.addData(json);
+    // Style
+    gemeindeLayer.eachLayer(function(feat) {
+        feat.setStyle(
+            {
+                fillColor: 'white',
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0
+            }
+        )
+    })
+    // Zoom in
+    map.fitBounds(gemeindeLayer.getBounds());
+})();
+
+// Touristische Ziele
+var tourZieleLayers = null
+var tourParameters = {
+	service : 'WFS',
+	version : '2.0',
+	request : 'GetFeature',
+	typeName : [('swd01_p'),('swd02_p'),('swd03_p')],
+	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
+	outputFormat : 'text/javascript',
+	format_options : 'callback:getJson',
+	SrsName : 'EPSG:4326',
+	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
+};
+
+var tourParametersExt = L.Util.extend(tourParameters);
+var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
+
+var ajax = $.ajax({
+	url : tourURL,
+	dataType : 'jsonp',
+	jsonpCallback : 'getJson',
+	success : ajaxTourZiele
+});
+
+function ajaxTourZiele(response) {
+		
+	tourZieleLayers = L.geoJSON(response, {
+		//onEachFeature: showPopupTourZiele,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: true,
+			layer: tourZieleLayers,
+			icon: '<i class="fa fa-camera" aria-hidden="true"></i>',
+			collapsed: true
+		},
+		'Touristische Ziele'
+	);
+}
+
+
+// Set up BaseLayer-Groups
+// Base Layers
+var baseLayers = [
+	{
+		name: "Luftbild",
+		layer: NRW_Luftbild_Map
+	},
+	{
+		name: "Amtliche Basiskarte",
+		layer: ABK_Layer
+	},
+	{
+		name: "OpenStreetMap",
+		layer: OSM_Layer
+	},
+
+];
+// Info Layers
+var infoDatenLayers = [
+{
+    group: "Info-Layer",
+    layers: [
+        {
+            active: false,
+            name: "Feldblöcke",
+            icon: '<i class="icon icon-feldbloecke"></i>',
+            layer: Feldbloecke
+        },
+        {
+            active: false,
+            name: "Gesamtwegenetz",
+            layer: Gesamtwegenetz
+        },
+        {
+            active: true,
+            name: "Gemeindegrenzen",
+            icon: '<i class="icon icon-gemgrenz"></i>',
+            layer: gemeindeLayer
+        },
+    ]
+    
+}
+];
+
 // Layer Controls
-var panelControl = new L.Control.PanelLayers(baseMaps);
+var panelControl = new L.Control.PanelLayers(baseLayers, infoDatenLayers, {
+    collapsibleGroups: false,
+    title: 'Legende',
+});
 map.addControl(panelControl);
+
+// When a gemeinde is chosen
+function chooseGemeinde(e) {
+    //selektion.features = [];
+    gemeindeLayer.eachLayer(function(feat) {
+        if (feat.feature.properties.name == e.value) {
+            var bounds = feat.getBounds();
+            // Calculate bounding box 
+            getBbox(bounds);
+            map.fitBounds(bounds);
+        } 
+    })
+}
+
+// Load test data categorized
+$('#test').click(function() {
+    // Add layers from file
+    var json = (function() {
+        var json = null;
+        $.ajax({
+        'async': false,
+        'global': false,
+        'url': "data/ergebnis-test3.geojson",
+        'dataType': "json",
+        'success': function(data) {
+            json = data;
+        }
+        });
+        geoJson = json;
+        var layer = 'wege';
+        addGeojson(layer);
+    })();
+})
 
 // ProgressBar
 var bar = new ProgressBar.Line(container, {
@@ -114,88 +316,246 @@ $('#animate').click(function() {
     bar.animate(noFinal);
 });
 
-// Default projections to convert from/to
-proj4.defs([
-    [
-      'EPSG:4326',
-      '+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'],
-    [
-      'EPSG:25832',
-      '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
-    ]
-]);
+/// 
+/// LAYERS INFORMATION
+///
 
-// Add gemeinde from file
-var gemeindeLayer = L.Proj.geoJson().addTo(map);
-var json = (function() {
-    var json = null;
-    $.ajax({
-      'async': false,
-      'global': false,
-      'url': "data/gemeinde.geojson",
-      'dataType': "json",
-      'success': function(data) {
-          json = data;
-      }
-    });
-    gemeinde = json;
-    gemeindeLayer.addData(json);
-    // Style
-    gemeindeLayer.eachLayer(function(feat) {
-        feat.setStyle(
+// Categorized Wege Layers
+var wegeKategorien = [
+    {
+        group: "Kernwegenetz",
+        layers: [
             {
-                fillColor: 'white',
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0
-            }
-        )
-    })
-    // Zoom in
-    map.fitBounds(gemeindeLayer.getBounds());
-})();
+                name: 'Kategorie A',
+                property: 'WEGKAT',
+                value: 'a',
+                icon: '<i class="icon icon-a"></i>'
+            },
+            {
+                name: 'Kategorie B',
+                property: 'WEGKAT',
+                value: 'b',
+                icon: '<i class="icon icon-b"></i>'
+            },
+            {
+                name: 'Kategorie C',
+                property: 'WEGKAT',
+                value: 'c',
+                icon: '<i class="icon icon-c"></i>'
+            },
+            {
+                name: 'Kategorie D',
+                property: 'WEGKAT',
+                value: 'd',
+                icon: '<i class="icon icon-d"></i>'
+            },
+            {
+                name: 'Kategorie I',
+                property: 'WEGKAT',
+                value: 'i',
+                icon: '<i class="icon icon-i"></i>'
+            },
+        ] 
+    },
+    {
+        group: "untergeordnetes Wegenetz",
+        layers: [
+            {
+                name: 'Kategorie E',
+                property: 'WEGKAT',
+                value: 'e',
+                icon: '<i class="icon icon-e"></i>'
+            },
+            {
+                name: 'Kategorie F',
+                property: 'WEGKAT',
+                value: 'f',
+                icon: '<i class="icon icon-f"></i>'
+            },
+            {
+                name: 'Kategorie G',
+                property: 'WEGKAT',
+                value: 'g',
+                icon: '<i class="icon icon-g"></i>'
+            },
+            {
+                name: 'Kategorie H',
+                property: 'WEGKAT',
+                value: 'h',
+                icon: '<i class="icon icon-h"></i>'
+            },
+        ]
+    }
+];
+var wegeLayers = {};
+var katWege = [];
 
-// When a gemeinde is chosen
-function chooseGemeinde(e) {
-    //selektion.features = [];
-    gemeindeLayer.eachLayer(function(feat) {
-        if (feat.feature.properties.name == e.value) {
-            feat.setStyle(show());
-            var bounds = feat.getBounds();
-            // Calculate bounding box 
-            getBbox(bounds);
-            map.fitBounds(bounds);
-        } else {
-            feat.setStyle(hide());
+// Grund Wege Layers
+var grundKategorien = [
+	{
+		name: 'Klassifizierte Straße',
+		property: 'wdm',
+		value: ['1301','1303','1305','1306','1307'],
+		icon: '<i class="icon icon-classified"></i>'
+	},
+	{
+		name: 'Kein Attribut',
+		property: 'wdm',
+		value: ['9997'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Hauptwirtschaftsweg',
+		property: 'fkt',
+		value: ['5211'],
+		icon: '<i class="icon icon-hww"></i>'
+	},
+	{
+		name: 'Wirtschaftsweg',
+		property: 'fkt',
+		value: ['5212'],
+		icon: '<i class="icon icon-ww"></i>'
+	},
+	{
+		name: 'Reitweg',
+		property: 'art',
+		value: ['1107'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Fußweg',
+		property: 'art',
+		value: ['1103'],
+		icon: '<i class="icon icon-fussw"></i>'
+	},
+	{
+		name: 'Radweg',
+		property: 'art',
+		value: ['1106'],
+		icon: '<i class="icon icon-none"></i>'
+	},
+	{
+		name: 'Fuß- und Radweg',
+		property: 'wdm',
+		value: ['1110'],
+        icon: '<i class="icon icon-rufw"></i>'
+	}
+];
+var grundLayers = {};
+var grundWege = [];
+
+// Function to create separate layers
+function createLayers(layer) {
+    if (layer == 'wege') {
+        for (group of wegeKategorien) {
+            for (kat of group['layers']) {
+                wegeLayers[kat] = L.Proj.geoJson(geoJson, {
+                    filter: function(feature, layer) {
+                        return feature.properties[kat['property']] == kat['value'];
+                    },
+                    onEachFeature: showPopupEdit,
+                    style: {
+                        color: wegeStyles[kat['value']],
+                        weight: 2,
+                        opacity: 1,
+                    }
+                }).addTo(map);
+                wegeLayers[kat].eachLayer(function(feature) {
+                    // Copy WEGKAT to ZWEGKAT
+                    feature['feature']['properties']['HANDL'] = 'a';
+                    feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
+                    // Add attributes for change
+                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
+                    for (var i in attribute) {
+                        var att = attribute[i];
+                        if (att in feature.feature.properties) {
+                            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
+                        } else {
+                            feature['feature']['properties'][att] = null;
+                            feature['feature']['properties'][att+'-ist'] = null;
+                        }
+                    }
+                    feature['feature']['properties']['grundLayer'] = false;
+                    var zus = feature['feature']['properties']['zus'];
+                    if (zus != null) {
+                        feature.setStyle({
+                            dashArray: '10'
+                        });
+                    } else {
+                        feature.setStyle({
+                            dashArray: null
+                        });
+                    }
+                });
+                panelControl.addOverlay({
+                    active: true,
+                    layer: wegeLayers[kat],
+                    icon: kat['icon']
+                },
+                kat['name'],
+                group['group']
+                );
+                katWege.push(wegeLayers[kat]);
+            }
         }
-    })
+    } else {
+        highlightGrund.addData(geoJson);
+        for (kat of grundKategorien) {
+            grundLayers[kat] = L.geoJSON(geoJson, {
+                filter: function(feature, layer) {
+                    return kat['value'].includes(feature.properties[kat['property']]);
+                },
+                onEachFeature: showPopupGrund,
+                style: {
+                    color: grundStyles[kat['name']],
+                    weight: 2,
+                    opacity: 1,
+                }
+            }).addTo(map);
+            grundLayers[kat].eachLayer(function(feature) {
+                // Add attributes for change
+                var attribute = ['wdm', 'fkt', 'art', 'zus'];
+                for (var i in attribute) {
+                    var att = attribute[i];
+                    if (att in feature.feature.properties) {
+                        feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
+                    } else {
+                        feature['feature']['properties'][att] = null;
+                        feature['feature']['properties'][att+'-ist'] = null;
+                    }
+                }
+                feature['feature']['properties']['grundLayer'] = true;
+                var zus = feature['feature']['properties']['zus'];
+                if (zus != null) {
+                    feature.setStyle({
+                        dashArray: '10'
+                    });
+                } else {
+                    feature.setStyle({
+                        dashArray: null
+                    });
+                }
+            });
+            panelControl.addOverlay({
+                active: true,
+                layer: grundLayers[kat],
+                icon: kat['icon']
+            },
+            kat['name'],
+            'Wegenetz'
+            );
+            grundWege.push(grundLayers[kat]);
+        }
+    }
 }
 
-// Load test data categorized
-$('#test').click(function() {
-    // Add layers from file
-    var json = (function() {
-        var json = null;
-        $.ajax({
-        'async': false,
-        'global': false,
-        'url': "data/ist.geojson",
-        'dataType': "json",
-        'success': function(data) {
-            json = data;
-        }
-        });
-        geoJson = json;
-        var layer = 'wege';
-        addGeojson(layer);
-    })();
-})
+/// 
+/// LOAD GRUND DATEN
+///
 
-// Load test grund daten
+// TRIGGER
+// Load grund daten
 $('#test-grund').click(function() {
-    var owsrootUrl = 'https://geoserver.livinglab-essigfabrik.online/geoserver/wfs';
 
     var defaultParameters = {
         service : 'WFS',
@@ -223,49 +583,6 @@ $('#test-grund').click(function() {
     });
 })
 
-// Download geojson to machine
-$('#download').click(function() {
-    var features = wegeLayer.toGeoJSON();
-    var file = 'wegenetz.geojson';
-    saveAs(new File([JSON.stringify(features)], file, {
-        type: "text/plain;charset=utf-8"
-    }), file);
-})
-
-/// 
-/// REQUEST TO CATEGORIZE FOR THE FIRST TIME
-///
-
-// VARIABLES
-// WPS Url
-var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
-// Layer Styles
-var wegeStyles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
-var grundStyles = {
-    'Klassifizierte Straße': '#C00000',
-    'Kein Attribut': '#ED7D31',
-    'Hauptwirtschaftsweg': '#00FFFF',
-    'Wirtschaftsweg': '#FFFF00',
-    'Fußweg': '#FF33CC',
-    'Reitweg': '#7030A0',
-    'Rad- und Fußweg': '#00FF99',
-    'Radweg': '#006666'
-}
-
-// TRIGGER
-// When button is clicked, categorize streets
-$('#request-exe').click(function() {
-    // Request file for NEW categorization
-    var requestFile = "src/request4_store.xml";
-    //var requestFile = "src/req_amanda.xml";
-    // Set features to false because it's a new request, so we're not
-    // sending any features
-    var features = false;
-    // Call function to make request
-    var layer = 'grundLayer';
-    completeRequest(requestFile, features, layer);
-});
-
 // FUNCTIONS
 // Function to calculate bounding box
 function getBbox(bounds) {
@@ -290,6 +607,117 @@ function getBbox(bounds) {
     // Final bbox (write it on global variable)
     bbox = swLngProj + ',' + swLatProj + ',' + neLngProj + ',' + neLatProj;
 }
+
+// Download geojson to machine
+$('#download').click(function() {
+    // Save layer as geojson
+    json = {
+		"type": "FeatureCollection",
+		"name": "name",
+		"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } },
+		"features": []
+	}
+    // Iterate through layers and export to geojson
+    for (layer of katWege) {
+        layer.eachLayer(function(feature) {
+            feature['feature']['properties']['grundLayer'] = false;
+        })
+        features = layer.toGeoJSON().features;
+        json.features = json.features.concat(features);
+    }
+    // Reproject
+    reprojGeojson(json);
+    var file = 'wegenetz.geojson';
+    saveAs(new File([JSON.stringify(json)], file, {
+        type: "text/plain;charset=utf-8"
+    }), file);
+})
+
+/// 
+/// REQUEST TO CATEGORIZE 
+///
+
+// VARIABLES
+// WPS Url
+var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;version=1.0.0&amp;request=Execute';
+// Layer Styles
+var wegeStyles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
+var grundStyles = {
+    'Klassifizierte Straße': '#C00000',
+    'Kein Attribut': '#ED7D31',
+    'Hauptwirtschaftsweg': '#00FFFF',
+    'Wirtschaftsweg': '#FFFF00',
+    'Fußweg': '#FF33CC',
+    'Reitweg': '#7030A0',
+    'Rad- und Fußweg': '#00FF99',
+    'Radweg': '#006666'
+}
+
+// TRIGGER
+// When button is clicked, categorize streets
+$('#recalculate').click(function() {
+    // Save layer as geojson
+    json = {
+		"type": "FeatureCollection",
+		"name": "name",
+		"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } },
+		"features": []
+	}
+    // Iterate through layers and export to geojson
+    for (layer of grundWege) {
+        layer.eachLayer(function(feature) {
+            feature['feature']['properties']['grundLayer'] = false;
+        })
+        features = layer.toGeoJSON().features;
+        json.features = json.features.concat(features);
+        map.removeLayer(layer);
+        panelControl.removeLayer(layer);
+    }
+    // Reproject
+    reprojGeojson(json);
+    // Stringify
+    var featuresString = JSON.stringify(json);
+    // Request file for re-categorization
+    var requestFile = "src/request4_store_edited.xml";
+    // Layer to add response to
+    var layer = "wege";
+    // Make request
+    completeRequest(requestFile, featuresString, layer);
+});
+
+// FUNCTIONS
+// Function to reproject geojson
+function reprojGeojson(Geojson) {
+    // Projection Source and Destination
+    var source = new proj4.Proj('EPSG:4326');
+    var dest = new proj4.Proj('EPSG:25832');
+    features = Geojson.features;
+    for (var i = 0; i < features.length; i++) {
+        var coords = Geojson.features[i].geometry.coordinates;
+        for (var j = 0; j < coords.length; j++) {
+          var coordList = Geojson.features[i].geometry.coordinates[j];
+          if (Array.isArray(coordList[0])) {
+            for (var k = 0; k < coordList.length; k++) {
+              var coordPair = Geojson.features[i].geometry.coordinates[j][k];
+              // Create point
+              var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
+              var ptRproj = proj4(source, dest, pt);
+              var coordRproj = [ptRproj.x, ptRproj.y];
+              // Replace original coordinate in the geojson
+              Geojson.features[i].geometry.coordinates[j][k] = coordRproj;
+            };
+          } else {
+            var coordPair = Geojson.features[i].geometry.coordinates[j];
+            // Create point
+            var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
+            var ptRproj = proj4(source, dest, pt);
+            var coordRproj = [ptRproj.x, ptRproj.y];
+            // Replace original coordinate in the geojson
+            Geojson.features[i].geometry.coordinates[j] = coordRproj;
+          }
+        }
+    }
+};
 
 // Function to make whole Request
 function completeRequest(requestFile, features, layer) {
@@ -399,228 +827,6 @@ function getGeojson(url) {
     geoJson = answer;
 };
 
-var wegeKategorien = [
-    {
-        group: "Gruppe 1",
-        layers: [
-            {
-                name: 'Kategorie A',
-                property: 'ZWEGKAT',
-                value: 'a',
-                icon: '<i class="icon icon-a"></i>'
-            },
-            {
-                name: 'Kategorie B',
-                property: 'ZWEGKAT',
-                value: 'b',
-                icon: '<i class="icon icon-b"></i>'
-            },
-            {
-                name: 'Kategorie C',
-                property: 'ZWEGKAT',
-                value: 'c',
-                icon: '<i class="icon icon-c"></i>'
-            },
-            {
-                name: 'Kategorie D',
-                property: 'ZWEGKAT',
-                value: 'd',
-                icon: '<i class="icon icon-d"></i>'
-            },
-        ] 
-    },
-    {
-        group: "Gruppe 2",
-        layers: [
-            {
-                name: 'Kategorie E',
-                property: 'ZWEGKAT',
-                value: 'e',
-                icon: '<i class="icon icon-e"></i>'
-            },
-            {
-                name: 'Kategorie F',
-                property: 'ZWEGKAT',
-                value: 'f',
-                icon: '<i class="icon icon-f"></i>'
-            },
-            {
-                name: 'Kategorie G',
-                property: 'ZWEGKAT',
-                value: 'g',
-                icon: '<i class="icon icon-g"></i>'
-            },
-            {
-                name: 'Kategorie H',
-                property: 'ZWEGKAT',
-                value: 'h',
-                icon: '<i class="icon icon-h"></i>'
-            },
-            {
-                name: 'Kategorie I',
-                property: 'ZWEGKAT',
-                value: 'i',
-                icon: '<i class="icon icon-i"></i>'
-            },
-        ]
-    }
-];
-var wegeLayers = {};
-
-var grundKategorien = [
-	{
-		name: 'Klassifizierte Straße',
-		property: 'wdm',
-		value: ['1301','1303','1305','1306','1307'],
-		icon: '<i class="icon icon-classified"></i>'
-	},
-	{
-		name: 'Kein Attribut',
-		property: 'wdm',
-		value: ['9997'],
-		icon: '<i class="icon icon-none"></i>'
-	},
-	{
-		name: 'Hauptwirtschaftsweg',
-		property: 'fkt',
-		value: ['5211'],
-		icon: '<i class="icon icon-hww"></i>'
-	},
-	{
-		name: 'Wirtschaftsweg',
-		property: 'fkt',
-		value: ['5212'],
-		icon: '<i class="icon icon-ww"></i>'
-	},
-	{
-		name: 'Reitweg',
-		property: 'art',
-		value: ['1107'],
-		icon: '<i class="icon icon-none"></i>'
-	},
-	{
-		name: 'Fußweg',
-		property: 'art',
-		value: ['1103'],
-		icon: '<i class="icon icon-fussw"></i>'
-	},
-	{
-		name: 'Radweg',
-		property: 'art',
-		value: ['1106'],
-		icon: '<i class="icon icon-none"></i>'
-	},
-	{
-		name: 'Fuß- und Radweg',
-		property: 'wdm',
-		value: ['1110'],
-        icon: '<i class="icon icon-rufw"></i>'
-	}
-];
-var grundLayers = {};
-
-function createLayers(layer) {
-    var strassenKategorien = window[layer + 'Kategorien'];
-    var strassenLayers = window[layer + 'Layers'];
-    var styles = window[layer + 'Styles'];
-    if (layer == 'wege') {
-        for (group of strassenKategorien) {
-            for (kat of group['layers']) {
-                strassenLayers[kat] = L.Proj.geoJson(geoJson, {
-                    filter: function(feature, layer) {
-                        return feature.properties[kat['property']] == kat['value'];
-                    },
-                    onEachFeature: showPopupEdit,
-                    style: {
-                        color: styles[kat['value']],
-                        weight: 2,
-                        opacity: 1,
-                    }
-                }).addTo(map);
-                strassenLayers[kat].eachLayer(function(feature) {
-                    // Add attributes for change
-                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
-                    for (var i in attribute) {
-                        var att = attribute[i];
-                        if (att in feature.feature.properties) {
-                            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
-                        } else {
-                            feature['feature']['properties'][att] = null;
-                            feature['feature']['properties'][att+'-ist'] = null;
-                        }
-                    }
-                    feature['feature']['properties']['grundLayer'] = false;
-                    var zus = feature['feature']['properties']['zus'];
-                    if (zus != null) {
-                        feature.setStyle({
-                            dashArray: '10'
-                        });
-                    } else {
-                        feature.setStyle({
-                            dashArray: null
-                        });
-                    }
-                });
-                panelControl.addOverlay({
-                    active: true,
-                    layer: strassenLayers[kat],
-                    icon: kat['icon']
-                },
-                kat['name'],
-                group['group']
-            );
-            }
-        }
-    } else {
-        highlightGrund.addData(geoJson);
-        for (kat of strassenKategorien) {
-            strassenLayers[kat] = L.geoJSON(geoJson, {
-                filter: function(feature, layer) {
-                    return kat['value'].includes(feature.properties[kat['property']]);
-                },
-                onEachFeature: showPopupGrund,
-                style: {
-                        color: styles[kat['name']],
-                        weight: 2,
-                        opacity: 1,
-                }
-            }).addTo(map);
-            strassenLayers[kat].eachLayer(function(feature) {
-                // Add attributes for change
-                var attribute = ['wdm', 'fkt', 'art', 'zus'];
-                for (var i in attribute) {
-                    var att = attribute[i];
-                    if (att in feature.feature.properties) {
-                        feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att]; 
-                    } else {
-                        feature['feature']['properties'][att] = null;
-                        feature['feature']['properties'][att+'-ist'] = null;
-                    }
-                }
-                feature['feature']['properties']['grundLayer'] = true;
-                var zus = feature['feature']['properties']['zus'];
-                if (zus != null) {
-                    feature.setStyle({
-                        dashArray: '10'
-                    });
-                } else {
-                    feature.setStyle({
-                        dashArray: null
-                    });
-                }
-            });
-            panelControl.addOverlay({
-                active: true,
-                layer: strassenLayers[kat],
-                icon: kat['icon']
-            },
-            kat['name'],
-            'Wegenetz'
-        );
-        }
-    }
-}
-
 // Function to add result features into map
 function addGeojson(layer) {
     // Clear highlight layer
@@ -631,94 +837,6 @@ function addGeojson(layer) {
     createLayers(layer);
     map.fitBounds(highlightLayer.getBounds());
 }
-
-// Function to style Wege according to categories
-function styleKategorie() {
-    wegeLayer.eachLayer(function(feature) {
-        // Style features
-        var type = feature['feature']['properties']['ZWEGKAT'];
-        feature.setStyle({
-            color: styles[type],
-            weight: 2,
-            opacity: 1,
-        });
-        // Add attributes for change
-        var attribute = ['wdm', 'zus', 'art', 'fkt', 'HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
-        for (var i in attribute) {
-            var att = attribute[i];
-            feature['feature']['properties'][att+'-ist'] = feature['feature']['properties'][att];
-        }
-        // Delete grundlayer attribut
-        feature['feature']['properties']['grundLayer'] = false;
-    });
-}
-
-/// 
-/// REQUEST TO RE-CATEGORIZE
-///
-
-// TRIGGER
-// When button is clicked categorize streets
-$('#recalculate').click(function() {
-    // Save layer as geojson
-    var json = {
-		"type": "FeatureCollection",
-		"name": "name",
-		"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::25832" } },
-		"features": []
-	}
-    map.eachLayer(function(layer){
-        console.log(layer);
-        /*
-        var geojson = layer.toGeoJSON();
-        reprojGeojson(geojson);
-        json.features.concat(geojson.features)
-        */
-    });
-    console.log(json);
-    // Stringify
-    var featuresString = JSON.stringify(json);
-    // Request file for re-categorization
-    var requestFile = "src/request4_store_edited.xml";
-    // Layer to add response to
-    var layer = "wege";
-    // Make request
-    completeRequest(requestFile, featuresString, layer);
-});
-
-// FUNCTIONS
-// Function to reproject geojson
-function reprojGeojson(Geojson) {
-    // Projection Source and Destination
-    var source = new proj4.Proj('EPSG:4326');
-    var dest = new proj4.Proj('EPSG:25832');
-    features = Geojson.features;
-    for (var i = 0; i < features.length; i++) {
-        var coords = Geojson.features[i].geometry.coordinates;
-        for (var j = 0; j < coords.length; j++) {
-          var coordList = Geojson.features[i].geometry.coordinates[j];
-          if (Array.isArray(coordList[0])) {
-            for (var k = 0; k < coordList.length; k++) {
-              var coordPair = Geojson.features[i].geometry.coordinates[j][k];
-              // Create point
-              var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
-              var ptRproj = proj4(source, dest, pt);
-              var coordRproj = [ptRproj.x, ptRproj.y];
-              // Replace original coordinate in the geojson
-              Geojson.features[i].geometry.coordinates[j][k] = coordRproj;
-            };
-          } else {
-            var coordPair = Geojson.features[i].geometry.coordinates[j];
-            // Create point
-            var pt = {x: Number(coordPair[0].toFixed(6)), y: Number(coordPair[1].toFixed(6))};
-            var ptRproj = proj4(source, dest, pt);
-            var coordRproj = [ptRproj.x, ptRproj.y];
-            // Replace original coordinate in the geojson
-            Geojson.features[i].geometry.coordinates[j] = coordRproj;
-          }
-        }
-    }
-};
 
 /// 
 /// ATTRIBUTE TABELLE
@@ -823,57 +941,31 @@ function showPopupEdit(feature, layer) {
             }
         }
     });
-    if ("STS" in feature.properties) {
-        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['STS'] !== null ? autolinker.link(feature.properties['STS'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-            <tr>\
-                <th scope="row">Straßenname: </th>\
-                <td>' + (feature.properties['NAM'] !== null ? autolinker.link(feature.properties['NAM'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Wegekategorie: </th>\
-                <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Zukünftige Wegekat.: </th>\
-                <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Abschnittslänge (m): </th>\
-                <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
-            </tr>\
-            <tr>\
-                <th scope="row">Handlungsempfehlung: </th>\
-                <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
-            </tr>\
-        </table>\
-        <br>\
-        <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
-    } else {
-        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-                <tr>\
-                    <th scope="row">Straßenname: </th>\
-                    <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
-                </tr>\
-                <tr>\
-                    <th scope="row">Wegekategorie: </th>\
-                    <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
-                </tr>\
-                <tr>\
-                    <th scope="row">Zukünftige Wegekat.: </th>\
-                    <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
-                </tr>\
-                <tr>\
-                    <th scope="row">Abschnittslänge (m): </th>\
-                    <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
-                </tr>\
-                <tr>\
-                    <th scope="row">Handlungsempfehlung: </th>\
-                    <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
-                </tr>\
-            </table>\
-            <br>\
-            <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
-    }
+    
+    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+        <tr>\
+            <th scope="row">Straßenname: </th>\
+            <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+        </tr>\
+        <tr>\
+            <th scope="row">Wegekategorie: </th>\
+            <td>' + (feature.properties['WEGKAT'] !== null ? autolinker.link(feature.properties['WEGKAT'].toLocaleString()) : '') + '</td>\
+        </tr>\
+        <tr>\
+            <th scope="row">Zukünftige Wegekat.: </th>\
+            <td>' + (feature.properties['ZWEGKAT'] !== null ? autolinker.link(feature.properties['ZWEGKAT'].toLocaleString()) : '') + '</td>\
+        </tr>\
+        <tr>\
+            <th scope="row">Abschnittslänge (m): </th>\
+            <td>' + (feature.properties['LAENGE'] !== null ? autolinker.link(feature.properties['LAENGE'].toLocaleString()) : '') + '</td>\
+        </tr>\
+        <tr>\
+            <th scope="row">Handlungsempfehlung: </th>\
+            <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
+        </tr>\
+    </table>\
+    <br>\
+    <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
@@ -888,8 +980,7 @@ function showPopupGrund(feature, layer) {
             }
         }
     });
-    if ("sts" in feature.properties) {
-        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
             <tr>\
                 <th scope="row">Straßenname: </th>\
                 <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
@@ -897,16 +988,6 @@ function showPopupGrund(feature, layer) {
         </table>\
         <br>\
         <button class="button" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
-    } else {
-        var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-                <tr>\
-                    <th scope="row">Straßenname: </th>\
-                    <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
-                </tr>\
-            </table>\
-            <br>\
-            <button class="button" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
-    }
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
@@ -975,7 +1056,6 @@ function editAttribute () {
 // Function to show attributes in the table when a Weg is clicked
 function editGrundAttribute () {
     var feature = wegSelected;
-    console.log(feature);
     if (feature['feature']['properties']['grundLayer']) {
         sidebar.open("edit-grund");
     } else {
@@ -1039,14 +1119,12 @@ function confirmEditGrund () {
     }
     // Style that something changed
     var attributen = ['wdm', 'fkt', 'art', 'zus'];
-    var attsChanged = 0;
     for (var i in attributen) {
         var att = attributen[i];
         if (feature['feature']['properties'][att+'-ist'] != feature['feature']['properties'][att]) {
             attsChanged = attsChanged + 1;
         };
     }
-    console.log(attsChanged);
     if (attsChanged > 0) {
         highlightGrund.eachLayer(function(hFeature) {
             var hLine = hFeature.feature;
@@ -1114,7 +1192,6 @@ function confirmEdit () {
             attsChanged = attsChanged + 1;
         };
     }
-    console.log(attsChanged);
     if (attsChanged > 0) {
         highlightLayer.eachLayer(function(hFeature) {
             var hLine = hFeature.feature;
@@ -1141,20 +1218,7 @@ function confirmEdit () {
     console.log(feature);
 };
 
-// Function to show that layer has attributes changed
-function changed() {
-    return {
-        dashArray: '5',
-    }
-}
-// Function to show that layer has no changes
-function notChanged() {
-    return {
-        dashArray: null,
-    }
-}
-
-// Turn Layers on and off
+// Show and hide features (used for the gemeinde and highlight layers)
 // Function to show layer
 function show() {
     return {
@@ -1170,15 +1234,6 @@ function hide() {
 
 // Hide Table when click outside of map
 map.on('click', function(e) {
-    // First reset style of all features
-    /*
-    wegeLayer.eachLayer(function(feature) {
-        feature.setStyle({
-            weight: 2,
-        })
-        feature['feature']['properties']['selected'] = false;
-    });
-    */
     // Hide Sidebar
     sidebar.close();
 })
