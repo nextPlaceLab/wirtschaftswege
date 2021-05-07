@@ -202,8 +202,29 @@ var panelControl = new L.Control.PanelLayers(baseLayers, infoDatenLayers, {
 });
 map.addControl(panelControl);
 
+// Spinner
+var opts = {
+    lines: 12, // The number of lines to draw
+    length: 12, // The length of each line
+    width: 7, // The line thickness
+    radius: 23, // The radius of the inner circle
+    color: '#fff', // #rgb or #rrggbb
+    speed: 1, // Rounds per second
+    trail: 60, // Afterglow percentage
+    shadow: true, // Whether to render a shadow
+    hwaccel: false // Whether to use hardware acceleration
+}
+target = document.getElementById('loading');
+spinner = new Spinner(opts).spin(target);
+
+// Loading Wheel
+var loadingControl = L.Control.loading({
+    spinjs: true
+});
+map.addControl(loadingControl);
+
 // Touristische Ziele
-var tourZieleLayers = null
+var tourZieleLayers = null;
 var tourParameters = {
 	service : 'WFS',
 	version : '2.0',
@@ -220,7 +241,8 @@ var tourParameters = {
 var tourParametersExt = L.Util.extend(tourParameters);
 var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
 
-var ajax = $.ajax({
+var ajaxTour = $.ajax({
+    async: false,
 	url : tourURL,
 	dataType : 'jsonp',
 	jsonpCallback : 'getJson',
@@ -305,6 +327,168 @@ function showPopupTourZiele(feature, layer) {
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
+
+// Farms
+var lufZieleLayers = null;
+
+function showPopupLufZiele(feature, layer) {
+	layer.setIcon(L.divIcon({className: 'icon icon-farm'}));
+
+	var popupContent = '<table border="0" rules="groups"><thead><tr><th>Gml-ID: </th><th>' + (feature.properties['oid'] !== null ? autolinker.link(feature.properties['oid'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+		<tr>\
+			<th scope="row">Funktion: </th>\
+			<td>' + (feature.properties['funktion'] !== null ? autolinker.link(feature.properties['funktion'].toLocaleString()) : '') + '</td>\
+		</tr>\
+		<tr>\
+			<th scope="row">Gebäudenutzungsbezeichnung: </th>\
+			<td>' + (feature.properties['gebnutzbez'] !== null ? autolinker.link(feature.properties['gebnutzbez'].toLocaleString()) : '') + '</td>\
+		</tr>\
+		</table>';
+
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
+/*
+// Luf Gebäude
+var lufParameters = {
+	service : 'WFS',
+	version : '2.0',
+	request : 'GetFeature',
+	typeName : 'WWA:luf_gebaeude',
+	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
+	outputFormat : 'text/javascript',
+	format_options : 'callback:getJson',
+	SrsName : 'EPSG:4326',
+	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326',
+	// CQL_FILTER: "funktion='Land- und forstwirtschaftliches Betriebsgebäude' or funktion='land- und forstwirtschaftliches Wohn- und Betriebsgebäude' and BBOX(geom,8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041) and geom=centroid(geom)",
+	
+	// "funktion" = 'Forsthaus' OR "funktion" = 'Gebäude für Land- und Forstwirtschaft' OR "funktion" = 'Land- und forstwirtschaftliches Betriebsgebäude' OR "funktion" = 'Scheune' OR "funktion" = 'Scheune und Stall'
+};
+
+var lufParametersExt = L.Util.extend(lufParameters);
+var lufURL = owsrootUrl + L.Util.getParamString(lufParametersExt);
+
+var ajaxLuf = $.ajax({
+    async: false,
+	url : lufURL,
+	dataType : 'jsonp',
+	jsonpCallback : 'getJson',
+	success : function (response) {
+        lufZieleLayers = L.geoJSON(response, {
+            onEachFeature: showPopupLufZiele,
+        }).addTo(map);
+        
+        panelControl.addOverlay({
+                active: false,
+                layer: lufZieleLayers,
+                icon: '<i class="icon icon-farm"></i>',
+                //collapsed: true
+            },
+            'land-/forstw. Gebäude',
+            'Info-Layer'
+        );
+    }
+});
+*/
+
+// Markers Grund
+var markerLayers = null;
+var markerParameters = {
+	service : 'WFS',
+	version : '2.0',
+	request : 'GetFeature',
+	typeName : 'WWA:marker_crowd_sourcing',
+	outputFormat : 'text/javascript',
+	format_options : 'callback:getJson',
+	SrsName : 'EPSG:4326',
+	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
+};
+
+var markerParametersExt = L.Util.extend(markerParameters);
+var markerURL = owsrootUrl + L.Util.getParamString(markerParametersExt);
+
+var ajaxMarkers = $.ajax({
+    async: false,
+	url : markerURL,
+	dataType : 'jsonp',
+	jsonpCallback : 'getJson',
+	success : ajaxMarker
+});
+
+function ajaxMarker(response) {
+	markerLayers = L.geoJSON(response, {
+		onEachFeature: showPopupMarker,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: false,
+			layer: markerLayers,
+			icon: '<i class="icon icon-marker"></i>',
+		},
+		'Vorschläge',
+        'Info-Layer'
+	);
+}
+
+function showPopupMarker(feature, layer) {
+
+	var popupContent = '<table border="0" rules="groups"><thead><tr><th>Gemeinde: </th><th>' + (feature.properties['gemeinde'] !== null ? autolinker.link(feature.properties['gemeinde'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+		<tr>\
+			<th scope="row">Datum: </th>\
+			<td>' + (feature.properties['timestamp'] !== null ? autolinker.link(feature.properties['timestamp'].toLocaleString()) : '') + '</td>\
+		</tr>\
+		<tr>\
+			<th scope="row">Beschreibung: </th>\
+			<td>' + (feature.properties['beschreibung'] !== null ? autolinker.link(feature.properties['beschreibung'].toLocaleString()) : '') + '</td>\
+		</tr>'
+	popupContent = popupContent + '</table>';
+
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
+
+// Markers Kat
+markerKatLayers = null;
+function addKatMarkers() {
+    var markerParameters = {
+        service : 'WFS',
+        version : '2.0',
+        request : 'GetFeature',
+        typeName : 'WWA:marker_crowd_sourcing_kat',
+        outputFormat : 'text/javascript',
+        format_options : 'callback:getJson',
+        SrsName : 'EPSG:4326',
+        //bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+        bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
+    };
+    
+    var markerParametersExt = L.Util.extend(markerParameters);
+    var markerURL = owsrootUrl + L.Util.getParamString(markerParametersExt);
+    
+    var ajax = $.ajax({
+        async: false,
+        url : markerURL,
+        dataType : 'jsonp',
+        jsonpCallback : 'getJson',
+        success : ajaxMarkerKat
+    });
+}
+
+function ajaxMarkerKat(response) {
+	markerKatLayers = L.geoJSON(response, {
+		onEachFeature: showPopupMarker,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: false,
+			layer: markerKatLayers,
+			icon: '<i class="icon icon-marker"></i>',
+		},
+		'Vorschläge Kat',
+        'Info-Layer'
+	);
+}
+
 // When a gemeinde is chosen
 function chooseGemeinde(e) {
     //selektion.features = [];
@@ -320,6 +504,16 @@ function chooseGemeinde(e) {
 
 // Load test data categorized
 $('#test').click(function() {
+    // Remove grund layers
+    for (layer of grundWege) {
+        map.removeLayer(layer);
+        panelControl.removeLayer(layer);
+    }
+    // Remove markers grund
+    map.removeLayer(markerLayers);
+    panelControl.removeLayer(markerLayers);
+    // Remove highlight grundlayer
+    map.removeLayer(highlightGrund);
     // Add layers from file
     var json = (function() {
         var json = null;
@@ -337,45 +531,6 @@ $('#test').click(function() {
         addGeojson(layer);
     })();
 })
-
-// ProgressBar
-var bar = new ProgressBar.Line(container, {
-    strokeWidth: 4,
-    easing: 'easeInOut',
-    duration: 1400,
-    color: '#FFEA82',
-    trailColor: '#eee',
-    trailWidth: 1,
-    svgStyle: {width: '100%', height: '100%'},
-    text: {
-      style: {
-        // Text color.
-        // Default: same as stroke color (options.color)
-        color: '#999',
-        position: 'absolute',
-        right: '0',
-        top: '30px',
-        padding: 0,
-        margin: 0,
-        transform: null
-      },
-      autoStyleContainer: false
-    },
-    from: {color: '#FFEA82'},
-    to: {color: '#ED6A5A'},
-    step: (state, bar) => {
-      bar.setText(Math.round(bar.value() * 100) + ' %');
-    }
-});
-
-// ProgressBar Test
-$('#animate').click(function() {
-    var no = '45';
-    var noFloat = parseFloat(no);
-    var noFinal = noFloat*0.01;
-    console.log(noFinal);
-    bar.animate(noFinal);
-});
 
 /// 
 /// LAYERS INFORMATION
@@ -523,10 +678,9 @@ function createLayers(layer) {
                 }).addTo(map);
                 wegeLayers[kat].eachLayer(function(feature) {
                     // Copy WEGKAT to ZWEGKAT
-                    feature['feature']['properties']['HANDL'] = 'a';
                     feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
                     // Add attributes for change
-                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT', 'BAUART', 'BAUZUS', 'TRAGF', 'UHPFL', 'FKT_LW', 'FKT_FW', 'FKT_TFE', 'FKT_WA', 'FKT_RE', 'FKT_RA', 'FKT_DM', 'FKT_SE', 'FKT_PEE', 'FKT_OEWw', 'FKT_OEWS', 'DKBREIT', 'DFBREIT', 'KBREIT', 'DATUM'];
+                    var attribute = ['ZWEGKAT', 'WEGKAT'];
                     for (var i in attribute) {
                         var att = attribute[i];
                         if (att in feature.feature.properties) {
@@ -717,6 +871,8 @@ var grundStyles = {
 // TRIGGER
 // When button is clicked, categorize streets
 $('#recalculate').click(function() {
+    spinner.spin();
+    map.spin(true);
     // Save layer as geojson
     json = {
 		"type": "FeatureCollection",
@@ -742,6 +898,11 @@ $('#recalculate').click(function() {
     var requestFile = "src/request4_store_edited.xml";
     // Layer to add response to
     var layer = "wege";
+    // Remove markers grund
+    map.removeLayer(markerLayers);
+    panelControl.removeLayer(markerLayers);
+    // Remove highlight grundlayer
+    map.removeLayer(highlightGrund);
     // Make request
     completeRequest(requestFile, featuresString, layer);
 });
@@ -822,10 +983,6 @@ function completeRequest(requestFile, features, layer) {
                     var percentage = status.split('percentCompleted="').pop().split('"')[0];
                     if ((percentage != progress) && (percentage != 'status') && (percentage != '')) {
                         progress = percentage;
-                        var noFloat = parseFloat(progress);
-                        var noFinal = noFloat*0.01;
-                        console.log(noFinal);
-                        bar.animate(noFinal);
                         console.log(progress);
                     }
                     setTimeout(getStatus(statusUrl), 10000);
@@ -897,6 +1054,9 @@ function addGeojson(layer) {
     // Clear layer
     createLayers(layer);
     map.fitBounds(highlightLayer.getBounds());
+    // Add markers kat
+    addKatMarkers();
+    map.spin(false);
 }
 
 /// 
@@ -988,10 +1148,6 @@ var fktValues = {
     "5211": "Hauptwirtschaftsweg",
     "5212": "Wirtschaftsweg"
 }
-//
-// VALUES DICTIONARIES
-//
-
 // Dictionary of Bauart Values
 var BAUARTValues = {
     "": " - ",
@@ -1001,7 +1157,6 @@ var BAUARTValues = {
     "d": "ohne Befestigung",
     "e": "Kreuzungsbauwerk"
 }
-
 // Dictionary of Bauzustand Values
 var BAUZUSValues = {
     "": " - ",
@@ -1009,7 +1164,6 @@ var BAUZUSValues = {
     "b": "Einzelmaßnahmen erforderlich",
     "c": "Gesamtsanierung erforderlich"
 }
-
 // Dictionary of Tragfähigkeit Values
 var TRAGFValues = {
     "": " - ",
@@ -1017,7 +1171,6 @@ var TRAGFValues = {
     "b": "mittel",
     "c": "gering"
 }
-
 // Dictionary of Unterhaltungspflicht Values
 var UHPFLValues = {
     "": " - ",
@@ -1030,7 +1183,6 @@ var UHPFLValues = {
     "Sonstige": "Sonstige",
     "OFFEN": "ungeklärt"
 }
-
 // Dictionary of Nutzungshäufigkeit Landwirtschaft Values
 var FKT_LWValues = {
     "": " - ",
@@ -1038,7 +1190,6 @@ var FKT_LWValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Forstwirtschaft Values
 var FKT_FWValues = {
     "": " - ",
@@ -1046,7 +1197,6 @@ var FKT_FWValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Touristmus, Erholung, Freizeit Values
 var FKT_TFEValues = {
     "": " - ",
@@ -1054,7 +1204,6 @@ var FKT_TFEValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Wandernutzung
 var FKT_WAValues = {
     "": " - ",
@@ -1062,7 +1211,6 @@ var FKT_WAValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Reiter
 var FKT_REValues = {
     "": " - ",
@@ -1070,7 +1218,6 @@ var FKT_REValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Radfahrer
 var FKT_RAValues = {
     "": " - ",
@@ -1078,7 +1225,6 @@ var FKT_RAValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Darseinsvorsorge und Mobilität
 var FKT_DMValues = {
     "": " - ",
@@ -1086,7 +1232,6 @@ var FKT_DMValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit siedlungsstrukturelle Entwicklungen
 var FKT_SEValues = {
     "": " - ",
@@ -1094,7 +1239,6 @@ var FKT_SEValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Nutzungshäufigkeit Produktion erneuerbarer Energien
 var FKT_PEEValues = {
     "": " - ",
@@ -1102,7 +1246,6 @@ var FKT_PEEValues = {
     "1": "gelegentlich / saisonal",
     "2": "häufig"
 }
-
 // Dictionary of Funktion ökologische Wertigkeit Wege, Verkersflächen
 var FKT_OEWWValues = {
     "": " - ",
@@ -1110,7 +1253,6 @@ var FKT_OEWWValues = {
     "1": "vorhanden",
     "2": "stark ausgeprägt"
 }
-
 // Dictionary of Funktion ökologische Wertigkeit Säume
 var FKT_OEWSValues = {
     "": " - ",
@@ -1156,7 +1298,7 @@ function showPopupEdit(feature, layer) {
         </tr>\
     </table>\
     <br>\
-    <button class="button" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
+    <button class="btn btn-outline-primary btn-sm" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
@@ -1178,7 +1320,7 @@ function showPopupGrund(feature, layer) {
             </tr>\
         </table>\
         <br>\
-        <button class="button" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
+        <button class="btn btn-outline-primary btn-sm" id="edit-attribute" onclick="editGrundAttribute()">Editieren</button>';
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
@@ -1242,6 +1384,25 @@ function editAttribute () {
                 row.innerHTML = rounded;
             }
         }
+    }
+    // Select all select tags
+    var selectLst = document.querySelectorAll("select");
+    for (var i in selectLst) {
+        var select = selectLst[i];
+        var id = select.id;
+        if ((id != "WEGKAT") && (id != "ZWEGKAT")) {
+            var value = feature['feature']['properties'][id];
+            if (value == null) {
+                value = "";
+            }
+            select.value = value;
+        }
+    }
+    // Select all input tags
+    var inputs = ['DKBREIT', 'DFBREIT', 'KBREIT', 'DATUM'];
+    for (att of inputs) {
+        var input = document.getElementById(att);
+        input.value = feature['feature']['properties'][att];
     }
 };
 
@@ -1310,6 +1471,7 @@ function confirmEditGrund () {
         }
     }
     // Style that something changed
+    var attsChanged = 0;
     var attributen = ['wdm', 'fkt', 'art', 'zus'];
     for (var i in attributen) {
         var att = attributen[i];
@@ -1354,7 +1516,6 @@ function confirmEdit () {
     var feature = wegSelected;
     // Select all table tags
     var entries = document.querySelectorAll("td");
-    //var attribute = ['HANDL-ist', 'PRIO-ist', 'ZUHPFL-ist', 'ZWEGKAT-ist', 'WEGKAT-ist'];
     // Loop
     for (var i in entries) {
         var row = entries[i];
@@ -1375,9 +1536,40 @@ function confirmEdit () {
             }
         }
     }
+
+    // Select all select tags
+    var selectLst = document.querySelectorAll("select");
+    for (var i in selectLst) {
+        var select = selectLst[i];
+        var id = select.id;
+        if ((id != "WEGKAT") && (id != "ZWEGKAT")) {
+            var oldValue = feature['feature']['properties'][id];
+            var newValue = select.value;
+            if (newValue == "") {
+                newValue = null;
+            }
+            if (newValue != oldValue) {
+                feature['feature']['properties'][id] = newValue;
+            }
+        }
+    }
+
+    // Select all input tags
+    var inputs = ['DKBREIT', 'DFBREIT', 'KBREIT', 'DATUM'];
+    for (att of inputs) {
+        var input = document.getElementById(att);
+        var oldValue = feature['feature']['properties'][att];
+        var newValue = input.value;
+        if (newValue == "") {
+            newValue = null;
+        }
+        if (newValue != oldValue) {
+            feature['feature']['properties'][att] = newValue;
+        }
+    }
+
     // Style that something changed
-    //var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
-    var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT', 'BAUART', 'BAUZUS', 'TRAGF', 'UHPFL', 'FKT_LW', 'FKT_FW', 'FKT_TFE', 'FKT_WA', 'FKT_RE', 'FKT_RA', 'FKT_DM', 'FKT_SE', 'FKT_PEE', 'FKT_OEWw', 'FKT_OEWS'];
+    var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT', 'BAUART', 'BAUZUS', 'TRAGF', 'UHPFL', 'FKT_LW', 'FKT_FW', 'FKT_TFE', 'FKT_WA', 'FKT_RE', 'FKT_RA', 'FKT_DM', 'FKT_SE', 'FKT_PEE', 'FKT_OEWW', 'FKT_OEWS', 'DKBREIT', 'DFBREIT', 'KBREIT', 'DATUM'];
     var attsChanged = 0;
     for (var i in attributen) {
         var att = attributen[i];

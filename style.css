@@ -24,37 +24,14 @@ a {
   position: relative;
 }
 
-.button {
-  background-color: gray;
-  border: none;
-  color: white;
-  padding: 5px 5px;
-  text-align: center;
-  text-decoration: none;
-  font-family: "Quicksand";
+td, th {
   font-size: 12px;
-  transition-duration: 0.2s;
-  border-radius: 4px;
 }
 
-.button:hover:enabled {
-  background-color: var(--color1);
-  color: white;
-  opacity: 0.8;
-  cursor: pointer;
+select {
+  width: 150px;
 }
 
-.button:active {
-  background-color: var(--color1);
-  opacity: 0.8;
-  border: none;
-  color: white;
-}
-
-.button:focus {
-  outline-color: #f7f7f9;
-}
-
-td {
-  font-size: 12px;
+.inputs {
+  width: 150px;
 }

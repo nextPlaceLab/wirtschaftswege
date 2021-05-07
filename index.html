@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="leaflet-sidebar.css" />
     <link rel="stylesheet" href="leaflet-panel-layers.css" />
     <link rel="stylesheet" href="icons.css" />
+    <link rel="stylesheet" href="spin.css" />
+    <link rel="stylesheet" href="Control.Loading.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous">
     <!--<link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
     -->
@@ -19,6 +21,7 @@
 
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,400,300,500,600,700" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js" integrity="sha512-NsDQfBXe4PQn8FUJztT36NXQiXQim8UFYB3eKmei+z/Ev2mMaNgElhcxSQWorYn3wycB2z4l7U8BV/kOKSDjYg==" crossorigin="anonymous"></script>
     <!-- Leaflet -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
     <!-- Leaflet Sidebar -->
@@ -31,7 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.4.3/proj4.js"></script>
     <script src="src/proj4leaflet.js"></script>
     <!-- Jquery -->
-    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <!-- XML Parser Library -->
     <script type="text/javascript" src="src/jkl-parsexml.js"></script>
     <!-- FileSaver -->
@@ -42,6 +45,8 @@
     <!-- ProgressBar -->
     <script type="text/javascript" src="src/progressbar.js"></script>
     <script src="src/leaflet-panel-layers.js"></script>
+    <script src="src/Control.Loading.js"></script>
+    <script src="src/leaflet.spin.js"></script>
 
 </head>
 
@@ -72,7 +77,7 @@
                     Start
                     <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
-
+                <br>
                 <select id="gemeinde" onchange="chooseGemeinde(this)">
                     <option disabled selected value>Wählen Sie eine Gemeinde</option>
                     <option value="Barntrup">Barntrup</option>
@@ -82,33 +87,33 @@
                     <option value="Lage">Lage</option>
                     <option value="Leopoldshöhe">Leopoldshöhe</option>
                 </select>
-
-                <button class="button" id="test-grund">Grund Daten Laden</button>
+                <br>
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="test-grund">Grund Daten Laden</button>
 
             </div>
 
             <div class="sidebar-pane" id="categorize">
                 <h1 class="sidebar-header">Kategorisierung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
-                
-                <button class="button" id="recalculate">Wegen Kategorisieren</button>
-
-                <button class="button" id="test">Test Daten Laden</button>
-
-                <div id="container"></div>
-
-                <button class="button" id="animate">Animate</button>
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="recalculate">Wegen Kategorisieren</button>
+                <br>
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="test">Test Daten Laden</button>
             
             </div>
 
             <div class="sidebar-pane" id="edit-grund">
                 <h1 class="sidebar-header">Grunddatenanpassung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
-                
+                <br>
                 <table id="attributes-ist" class="table table-sm">
-                    <tr>
-                        <td>ATTRIBUT</td>
-                        <td>WERT</td>
-                        <td>WERT-Korrigiert</td>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <td>ATTRIBUT</td>
+                            <td>WERT</td>
+                            <td>WERT-Korrigiert</td>
+                        </tr>
+                    </thead>
                     <tr>
                     <td>Abschnittslänge (m):</td>
                         <td id="LAENGE"></td>
@@ -158,14 +163,15 @@
                         </select></td>
                     </tr>
                 </table>
-                
-                <button class="button" id="edit-confirm" onclick="confirmEditGrund()">Confirm</button>
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="edit-confirm" onclick="confirmEditGrund()">Übernehmen</button>
             
             </div>
 
             <div class="sidebar-pane" id="edit-soll">
                 <h1 class="sidebar-header">Konzepterarbeitung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
-                
+                <br>
+                <h6>Wegekategorien</h6>
                 <table id="attributes-soll" class="table table-sm">
                     <thead>
                         <tr>
@@ -174,7 +180,6 @@
                             <td>WERT-Korrigiert</td>
                         </tr>
                     </thead>
-                    <th>Wegekategorien</th>
                     <tr>
                         <td>IST Kategorie:</td>
                         <td id="WEGKAT-ist"></td>
@@ -207,11 +212,19 @@
                                 <option value="i">I_Rad-, Reit-, Fußweg</option>
                             </select></td>
                     </tr>
-                    <th>Erfassung des IST-Zustands</th>
+                </table>
+
+                <h6>Erfassung des IST-Zustands</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <td>ATTRIBUT</td>
+                            <td>WERT</td>
+                        </tr>
+                    </thead>
                     <th>Beschreibung des Wegabschnitts</th>
                     <tr>
                         <td>Ausbauart</td>
-                        <td id="BAUART-ist"></td>
                         <td><select id="BAUART">
                                 <option value=""> - </option>
                                 <option value="a">befestigt</option>
@@ -223,7 +236,6 @@
                     </tr>
                     <tr>
                         <td>Ausbauzustand</td>
-                        <td id="BAUZUS-ist"></td>
                         <td><select id="BAUZUS">
                                 <option value=""> - </option>
                                 <option value="a">in Ordnung</option>
@@ -233,7 +245,6 @@
                     </tr>
                     <tr>
                         <td>Tragfähigkeit</td>
-                        <td id="TRAGF-ist"></td>
                         <td><select id="TRAGF">
                                 <option value=""> - </option>
                                 <option value="a">hoch</option>
@@ -243,22 +254,18 @@
                     </tr>
                     <tr>
                         <td>Vorwiegende Kronenbreite [m]</td>
-                        <td id="DKBREIT-ist"></td>
-                        <td><input type="text" id="DKBREIT"></input></td>
+                        <td><input class="inputs" type="number" step="0.01" id="DKBREIT"></input></td>
                     </tr>
                     <tr>
                         <td>Vorwiegende Fahrbahnbreite [m]</td>
-                        <td id="DFBREIT-ist"></td>
-                        <td><input type="text" id="DFBREIT"></input></td>
+                        <td><input class="inputs" type="number" step="0.01" id="DFBREIT"></input></td>
                     </tr>
                     <tr>
                         <td>Schmalste Breite [m]</td>
-                        <td id="KBREIT-ist"></td>
-                        <td><input type="text" id="KBREIT"></input></td>
+                        <td><input class="inputs" type="number" step="0.01" id="KBREIT"></input></td>
                     </tr>
                     <tr>
                         <td>Unterhaltungspflicht</td>
-                        <td id="UHPFL-ist"></td>
                         <td><select id="UHPFL">
                                 <option value=""> - </option>
                                 <option value="GEM">Gemeinde</option>
@@ -273,7 +280,6 @@
                     <th>Nutzungshäufigkeit nach Funktionalität</th>
                     <tr>
                         <td>Nutzungshäufigkeit Landwirtschaft</td>
-                        <td id="FKT_LW-ist"></td>
                         <td><select id="FKT_LW">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -284,7 +290,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit Forstwirtschaft</td>
-                        <td id="FKT_FW-ist"></td>
                         <td><select id="FKT_FW">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -295,7 +300,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit Tourismus, Erholung, Freizeit</td>
-                        <td id="FKT_TFE-ist"></td>
                         <td><select id="FKT_TFE">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -306,7 +310,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit Wandernutzung</td>
-                        <td id="FKT_WA-ist"></td>
                         <td><select id="FKT_WA">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -317,7 +320,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit Reiter</td>
-                        <td id="FKT_RE-ist"></td>
                         <td><select id="FKT_RE">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -328,7 +330,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit Radfahrer</td>
-                        <td id="FKT_RA-ist"></td>
                         <td><select id="FKT_RA">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -339,7 +340,6 @@
             
                     </tr>
                     <td>Nutzungshäufigkeit Darseinsvorsorge und Mobilität</td>
-                    <td id="FKT_DM-ist"></td>
                     <td><select id="FKT_DM">
                             <option value=""> - </option>
                             <option value="0">nie / selten</option>
@@ -350,7 +350,6 @@
             
                     <tr>
                         <td>Nutzungshäufigkeit siedlungsstrukturelle Entwicklungen</td>
-                        <td id="FKT_SE-ist"></td>
                         <td><select id="FKT_SE">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -362,7 +361,6 @@
                     <tr>
             
                         <td>Nutzungshäufigkeit Produktion erneuerbarer Energien</td>
-                        <td id="FKT_PEE-ist"></td>
                         <td><select id="FKT_PEE">
                                 <option value=""> - </option>
                                 <option value="0">nie / selten</option>
@@ -375,7 +373,6 @@
             
                     <tr>
                         <td>Funktion ökologische Wertigkeit Wege, Verkehrsflächen</td>
-                        <td id="FKT_OEWW-ist"></td>
                         <td><select id="FKT_OEWW">
                                 <option value=""> - </option>
                                 <option value="0">nicht vorhanden</option>
@@ -386,7 +383,6 @@
             
                     <tr>
                         <td>Funktion ökologische Wertigkeit Säume</td>
-                        <td id="FKT_OEWS-ist"></td>
                         <td><select id="FKT_OEWS">
                                 <option value=""> - </option>
                                 <option value="0">nicht vorhanden</option>
@@ -397,16 +393,22 @@
             
                     <tr>
                         <td>Datum der örtl. Begehung /Erfassung</td>
-                        <td id='DATUM-ist'></td>
-                        <td><input id="DATUM" type="date"></input></td>
+                        <td><input class="inputs" id="DATUM" type="date"></input></td>
                     </tr>
-            
-                    <th>Erfassung des SOLL-Konzepts</th>
+                </table>
+                
+                <h6>Erfassung des SOLL-Konzepts</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <td>ATTRIBUT</td>
+                            <td>WERT</td>
+                        </tr>
+                    </thead>
                     <th>Beschreibung des Wegabschnitts</th>
-            
+
                     <tr>
                         <td>Handlungsempfehlung:</td>
-                        <td id="HANDL-ist"></td>
                         <td><select id="HANDL">
                                 <option value=""> - </option>
                                 <option value="a">Erhaltung wie Bestand (normale Unterhaltung)</option>
@@ -418,7 +420,6 @@
                     </tr>
                     <tr>
                         <td>Priorität:</td>
-                        <td id="PRIO-ist"></td>
                         <td><select id="PRIO">
                                 <option value=""> - </option>
                                 <option value="Kurzfristig">Kurzfristig</option>
@@ -428,7 +429,6 @@
                     </tr>
                     <tr>
                         <td>Zukünftige Unterhaltungspflicht:</td>
-                        <td id="ZUHPFL-ist"></td>
                         <td><select id="ZUHPFL">
                                 <option value=""> - </option>
                                 <option value="Gemeinde">Gemeinde</option>
@@ -443,9 +443,10 @@
             
             
                 </table>
-            
-                <button class="button" id="edit-confirm" onclick="confirmEdit()">Confirm</button>
-
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="edit-confirm" onclick="confirmEdit()">Übernehmen</button>
+                <br>
+                <br>
             </div>
 
             <div class="sidebar-pane" id="compare">
@@ -454,9 +455,9 @@
 
             <div class="sidebar-pane" id="download">
                 <h1 class="sidebar-header">Herunterladen<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <br>
+                <button class="btn btn-outline-primary btn-sm" id="download">Download</button>
                 
-                <button class="button" id="download">Download</button>
-            
             </div>
 
         </div>
