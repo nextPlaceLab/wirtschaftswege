@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="leaflet-panel-layers.css" />
     <link rel="stylesheet" href="icons.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous">
+    <!--<link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+    -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
 
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,400,300,500,600,700" rel="stylesheet">
@@ -100,7 +103,7 @@
             <div class="sidebar-pane" id="edit-grund">
                 <h1 class="sidebar-header">Grunddatenanpassung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 
-                <table id="attributes-ist">
+                <table id="attributes-ist" class="table table-sm">
                     <tr>
                         <td>ATTRIBUT</td>
                         <td>WERT</td>
@@ -163,80 +166,282 @@
             <div class="sidebar-pane" id="edit-soll">
                 <h1 class="sidebar-header">Konzepterarbeitung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 
-                <table id="attributes-soll">
-                    <tr>
-                        <td>ATTRIBUT</td>
-                        <td>WERT</td>
-                        <td>WERT-Korrigiert</td>
-                    </tr>
-                    <tr>
-                        <td>Handlungsempfehlung:</td>
-                        <td id="HANDL-ist"></td>
-                        <td><select id="HANDL">
-                            <option value=""> - </option>
-                            <option value="a">Erhaltung wie Bestand (normale Unterhaltung)</option>
-                            <option value="b">den Unterbau einschließende Sanierung (gleiche Kategorie)</option>
-                            <option value="c">Umbau / andere Bauweise (veränderte Kategorie)</option>
-                            <option value="d">Rückbau / Aufhebung</option>
-                            <option value="e">Neubau (neue Trasse)</option>
-                        </select></td>
-                    </tr>
-                    <tr>
-                        <td>Priorität:</td>
-                        <td id="PRIO-ist"></td>
-                        <td><select id="PRIO">
-                            <option value=""> - </option>
-                            <option value="Kurzfristig">Kurzfristig</option>
-                            <option value="Mittelfristig">Mittelfristig</option>
-                            <option value="Langfristig">Langfristig</option>
-                        </select></td>
-                    </tr>
-                    <tr>
-                        <td>Zukünftige Unterhaltungspflicht:</td>
-                        <td id="ZUHPFL-ist"></td>
-                        <td><select id="ZUHPFL">
-                            <option value=""> - </option>
-                            <option value="Gemeinde">Gemeinde</option>
-                            <option value="Kreis">Kreis</option>
-                            <option value="Land">Land</option>
-                            <option value="Bundesrepublik Deutschland">Bundesrepublik Deutschland</option>
-                            <option value="Natürliche Personen des Privatrechts">Natürliche Personen des Privatrechts</option>
-                            <option value="Juristichen Personen des Privatrechts">Juristichen Personen des Privatrechts</option>
-                            <option value="Sonstige">Sonstige</option>
-                        </select></td>
-                    </tr>
+                <table id="attributes-soll" class="table table-sm">
+                    <thead>
+                        <tr>
+                            <td>ATTRIBUT</td>
+                            <td>WERT</td>
+                            <td>WERT-Korrigiert</td>
+                        </tr>
+                    </thead>
+                    <th>Wegekategorien</th>
                     <tr>
                         <td>IST Kategorie:</td>
                         <td id="WEGKAT-ist"></td>
                         <td><select id="WEGKAT">
-                            <option value=""> - </option>
-                            <option value="a">A_klassifiziert</option>
-                            <option value="b">B_multifunktionaler Verbindungsweg</option>
-                            <option value="c">C_Hauptwirtschaftsweg</option>
-                            <option value="d">D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</option>
-                            <option value="e">E_untergeordneter Erschließungsweg mit luf Verkehr</option>
-                            <option value="f">F_Einzelerschließung kaum luf Verkehr</option>
-                            <option value="g">G_Binnenerschließung, entbehrlich für das Wegenetz</option>
-                            <option value="h">H_keine Funktion</option>
-                            <option value="i">I_Rad-, Reit-, Fußweg</option>
-                        </select></td>
+                                <option value=""> - </option>
+                                <option value="a">A_klassifiziert</option>
+                                <option value="b">B_multifunktionaler Verbindungsweg</option>
+                                <option value="c">C_Hauptwirtschaftsweg</option>
+                                <option value="d">D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</option>
+                                <option value="e">E_untergeordneter Erschließungsweg mit luf Verkehr</option>
+                                <option value="f">F_Einzelerschließung kaum luf Verkehr</option>
+                                <option value="g">G_Binnenerschließung, entbehrlich für das Wegenetz</option>
+                                <option value="h">H_keine Funktion</option>
+                                <option value="i">I_Rad-, Reit-, Fußweg</option>
+                            </select></td>
                     </tr>
                     <tr>
                         <td>Zukünftige Kategorie:</td>
                         <td id="ZWEGKAT-ist"></td>
                         <td><select id="ZWEGKAT">
+                                <option value=""> - </option>
+                                <option value="a">A_klassifiziert</option>
+                                <option value="b">B_multifunktionaler Verbindungsweg</option>
+                                <option value="c">C_Hauptwirtschaftsweg</option>
+                                <option value="d">D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</option>
+                                <option value="e">E_untergeordneter Erschließungsweg mit luf Verkehr</option>
+                                <option value="f">F_Einzelerschließung kaum luf Verkehr</option>
+                                <option value="g">G_Binnenerschließung, entbehrlich für das Wegenetz</option>
+                                <option value="h">H_keine Funktion</option>
+                                <option value="i">I_Rad-, Reit-, Fußweg</option>
+                            </select></td>
+                    </tr>
+                    <th>Erfassung des IST-Zustands</th>
+                    <th>Beschreibung des Wegabschnitts</th>
+                    <tr>
+                        <td>Ausbauart</td>
+                        <td id="BAUART-ist"></td>
+                        <td><select id="BAUART">
+                                <option value=""> - </option>
+                                <option value="a">befestigt</option>
+                                <option value="b">teilbefestigt</option>
+                                <option value="c">wassergebunden</option>
+                                <option value="d">ohne Befestigung</option>
+                                <option value="e">Kreuzungsbauwerk</option>
+                            </select></td>
+                    </tr>
+                    <tr>
+                        <td>Ausbauzustand</td>
+                        <td id="BAUZUS-ist"></td>
+                        <td><select id="BAUZUS">
+                                <option value=""> - </option>
+                                <option value="a">in Ordnung</option>
+                                <option value="b">Einzelmaßnahmen erforderlich</option>
+                                <option value="c">Gesamtsanierung erforderlich</option>
+                            </select></td>
+                    </tr>
+                    <tr>
+                        <td>Tragfähigkeit</td>
+                        <td id="TRAGF-ist"></td>
+                        <td><select id="TRAGF">
+                                <option value=""> - </option>
+                                <option value="a">hoch</option>
+                                <option value="b">mittel</option>
+                                <option value="c">gering</option>
+                            </select></td>
+                    </tr>
+                    <tr>
+                        <td>Vorwiegende Kronenbreite [m]</td>
+                        <td id="DKBREIT-ist"></td>
+                        <td><input type="text" id="DKBREIT"></input></td>
+                    </tr>
+                    <tr>
+                        <td>Vorwiegende Fahrbahnbreite [m]</td>
+                        <td id="DFBREIT-ist"></td>
+                        <td><input type="text" id="DFBREIT"></input></td>
+                    </tr>
+                    <tr>
+                        <td>Schmalste Breite [m]</td>
+                        <td id="KBREIT-ist"></td>
+                        <td><input type="text" id="KBREIT"></input></td>
+                    </tr>
+                    <tr>
+                        <td>Unterhaltungspflicht</td>
+                        <td id="UHPFL-ist"></td>
+                        <td><select id="UHPFL">
+                                <option value=""> - </option>
+                                <option value="GEM">Gemeinde</option>
+                                <option value="KREIS">Kreis</option>
+                                <option value="LAND">Land Nordrhein-Westfalen</option>
+                                <option value="BUND">Bundesrepublick Deutschland</option>
+                                <option value="PRIV">natürliche oder juristische Privatperson</option>
+                                <option value="SONST">sonstige</option>
+                                <option value="OFFEN">ungeklärt</option>
+                            </select></td>
+                    </tr>
+                    <th>Nutzungshäufigkeit nach Funktionalität</th>
+                    <tr>
+                        <td>Nutzungshäufigkeit Landwirtschaft</td>
+                        <td id="FKT_LW-ist"></td>
+                        <td><select id="FKT_LW">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit Forstwirtschaft</td>
+                        <td id="FKT_FW-ist"></td>
+                        <td><select id="FKT_FW">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit Tourismus, Erholung, Freizeit</td>
+                        <td id="FKT_TFE-ist"></td>
+                        <td><select id="FKT_TFE">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit Wandernutzung</td>
+                        <td id="FKT_WA-ist"></td>
+                        <td><select id="FKT_WA">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit Reiter</td>
+                        <td id="FKT_RE-ist"></td>
+                        <td><select id="FKT_RE">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit Radfahrer</td>
+                        <td id="FKT_RA-ist"></td>
+                        <td><select id="FKT_RA">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    </tr>
+                    <td>Nutzungshäufigkeit Darseinsvorsorge und Mobilität</td>
+                    <td id="FKT_DM-ist"></td>
+                    <td><select id="FKT_DM">
                             <option value=""> - </option>
-                            <option value="a">A_klassifiziert</option>
-                            <option value="b">B_multifunktionaler Verbindungsweg</option>
-                            <option value="c">C_Hauptwirtschaftsweg</option>
-                            <option value="d">D_untergeordneter Wirtschaftsweg mit Fußgängerverkehr</option>
-                            <option value="e">E_untergeordneter Erschließungsweg mit luf Verkehr</option>
-                            <option value="f">F_Einzelerschließung kaum luf Verkehr</option>
-                            <option value="g">G_Binnenerschließung, entbehrlich für das Wegenetz</option>
-                            <option value="h">H_keine Funktion</option>
-                            <option value="i">I_Rad-, Reit-, Fußweg</option>
+                            <option value="0">nie / selten</option>
+                            <option value="1">gelegentlich / saisonal</option>
+                            <option value="2">häufig</option>
                         </select></td>
                     </tr>
+            
+                    <tr>
+                        <td>Nutzungshäufigkeit siedlungsstrukturelle Entwicklungen</td>
+                        <td id="FKT_SE-ist"></td>
+                        <td><select id="FKT_SE">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+            
+                        <td>Nutzungshäufigkeit Produktion erneuerbarer Energien</td>
+                        <td id="FKT_PEE-ist"></td>
+                        <td><select id="FKT_PEE">
+                                <option value=""> - </option>
+                                <option value="0">nie / selten</option>
+                                <option value="1">gelegentlich / saisonal</option>
+                                <option value="2">häufig</option>
+                            </select></td>
+                    </tr>
+            
+                    <th>Ökologische Wertigkeit</th>
+            
+                    <tr>
+                        <td>Funktion ökologische Wertigkeit Wege, Verkehrsflächen</td>
+                        <td id="FKT_OEWW-ist"></td>
+                        <td><select id="FKT_OEWW">
+                                <option value=""> - </option>
+                                <option value="0">nicht vorhanden</option>
+                                <option value="1">vorhanden</option>
+                                <option value="2">stark ausgeprägt</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Funktion ökologische Wertigkeit Säume</td>
+                        <td id="FKT_OEWS-ist"></td>
+                        <td><select id="FKT_OEWS">
+                                <option value=""> - </option>
+                                <option value="0">nicht vorhanden</option>
+                                <option value="1">vorhanden</option>
+                                <option value="2">stark ausgeprägt</option>
+                            </select></td>
+                    </tr>
+            
+                    <tr>
+                        <td>Datum der örtl. Begehung /Erfassung</td>
+                        <td id='DATUM-ist'></td>
+                        <td><input id="DATUM" type="date"></input></td>
+                    </tr>
+            
+                    <th>Erfassung des SOLL-Konzepts</th>
+                    <th>Beschreibung des Wegabschnitts</th>
+            
+                    <tr>
+                        <td>Handlungsempfehlung:</td>
+                        <td id="HANDL-ist"></td>
+                        <td><select id="HANDL">
+                                <option value=""> - </option>
+                                <option value="a">Erhaltung wie Bestand (normale Unterhaltung)</option>
+                                <option value="b">den Unterbau einschließende Sanierung (gleiche Kategorie)</option>
+                                <option value="c">Umbau / andere Bauweise (veränderte Kategorie)</option>
+                                <option value="d">Rückbau / Aufhebung</option>
+                                <option value="e">Neubau (neue Trasse)</option>
+                            </select></td>
+                    </tr>
+                    <tr>
+                        <td>Priorität:</td>
+                        <td id="PRIO-ist"></td>
+                        <td><select id="PRIO">
+                                <option value=""> - </option>
+                                <option value="Kurzfristig">Kurzfristig</option>
+                                <option value="Mittelfristig">Mittelfristig</option>
+                                <option value="Langfristig">Langfristig</option>
+                            </select></td>
+                    </tr>
+                    <tr>
+                        <td>Zukünftige Unterhaltungspflicht:</td>
+                        <td id="ZUHPFL-ist"></td>
+                        <td><select id="ZUHPFL">
+                                <option value=""> - </option>
+                                <option value="Gemeinde">Gemeinde</option>
+                                <option value="Kreis">Kreis</option>
+                                <option value="Land">Land</option>
+                                <option value="Bundesrepublik Deutschland">Bundesrepublik Deutschland</option>
+                                <option value="Natürliche Personen des Privatrechts">Natürliche Personen des Privatrechts</option>
+                                <option value="Juristichen Personen des Privatrechts">Juristichen Personen des Privatrechts</option>
+                                <option value="Sonstige">Sonstige</option>
+                            </select></td>
+                    </tr>
+            
+            
                 </table>
             
                 <button class="button" id="edit-confirm" onclick="confirmEdit()">Confirm</button>

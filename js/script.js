@@ -151,48 +151,6 @@ var json = (function() {
     map.fitBounds(gemeindeLayer.getBounds());
 })();
 
-// Touristische Ziele
-var tourZieleLayers = null
-var tourParameters = {
-	service : 'WFS',
-	version : '2.0',
-	request : 'GetFeature',
-	typeName : [('swd01_p'),('swd02_p'),('swd03_p')],
-	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
-	outputFormat : 'text/javascript',
-	format_options : 'callback:getJson',
-	SrsName : 'EPSG:4326',
-	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
-	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
-};
-
-var tourParametersExt = L.Util.extend(tourParameters);
-var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
-
-var ajax = $.ajax({
-	url : tourURL,
-	dataType : 'jsonp',
-	jsonpCallback : 'getJson',
-	success : ajaxTourZiele
-});
-
-function ajaxTourZiele(response) {
-		
-	tourZieleLayers = L.geoJSON(response, {
-		//onEachFeature: showPopupTourZiele,
-	}).addTo(map);
-	
-	panelControl.addOverlay({
-			active: true,
-			layer: tourZieleLayers,
-			icon: '<i class="fa fa-camera" aria-hidden="true"></i>',
-			collapsed: true
-		},
-		'Touristische Ziele'
-	);
-}
-
-
 // Set up BaseLayer-Groups
 // Base Layers
 var baseLayers = [
@@ -243,6 +201,109 @@ var panelControl = new L.Control.PanelLayers(baseLayers, infoDatenLayers, {
     title: 'Legende',
 });
 map.addControl(panelControl);
+
+// Touristische Ziele
+var tourZieleLayers = null
+var tourParameters = {
+	service : 'WFS',
+	version : '2.0',
+	request : 'GetFeature',
+	typeName : [('swd01_p'),('swd02_p'),('swd03_p')],
+	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
+	outputFormat : 'text/javascript',
+	format_options : 'callback:getJson',
+	SrsName : 'EPSG:4326',
+	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
+};
+
+var tourParametersExt = L.Util.extend(tourParameters);
+var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
+
+var ajax = $.ajax({
+	url : tourURL,
+	dataType : 'jsonp',
+	jsonpCallback : 'getJson',
+	success : ajaxTourZiele
+});
+
+function ajaxTourZiele(response) {
+		
+	tourZieleLayers = L.geoJSON(response, {
+		onEachFeature: showPopupTourZiele,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: false,
+			layer: tourZieleLayers,
+			icon: '<i class="fa fa-camera" aria-hidden="true"></i>',
+		},
+		'Touristische Ziele',
+        'Info-Layer'
+	);
+}
+
+// Dictionary for tourist poi
+var touristPOI = {
+	TF_KircheSchlossBurg: 'Kirche, Schloss, Burg',
+	TF_SonstigesBauwerk: 'Sonstiges Bauwerk',
+	TF_ArchaeologischesBauwerk: 'Archaeologisches Bauwerk',
+	TF_Natur: 'Natur',
+	TF_Aussichtspunkt: 'Aussichtspunkt',
+    "": " - ",
+}
+
+var touristArt = {
+	3010: 'Kirche',
+	3011: 'Kirchenruine', 
+	3012: 'Ehemalige Kirche', 
+	3015: 'Kapelle', 
+	3017: 'Ehemalige Kapelle', 
+	3020: 'Kloster', 
+	3021: 'Klosterruine', 
+	3022: 'Ehemaliges Kloster', 
+	3025: 'Synagoge',  
+	3040: 'Wegekreuz, Bildstock', 
+	3050: 'Schloss', 
+	3051: 'Schlossruine', 
+	3053: 'Gut, Herrenhaus', 
+	3060: 'Burg', 
+	3061: 'Burgruine',  
+	3063: 'Burghügel', 
+	3131: 'Hügelgrab', 
+	3132: 'Steingrab', 
+	3210: 'Wassermühle', 
+	3211: 'Windmühle', 
+	3242: 'Aussichtsturm', 
+	3255: 'Denkmal', 
+	3279: 'Sonstige technische Sehenswürdigkeit', 
+	3330: 'Naturdenkmal', 
+    "": " - ",
+}
+
+function showPopupTourZiele(feature, layer) {
+	//layer.setIcon('<i class="fa fa-camera" aria-hidden="true"></i>');
+	layer.setIcon(L.divIcon({className: 'fa fa-camera'}));
+
+	var popupContent = '<table border="0" rules="groups"><thead><tr><th>Gml-ID: </th><th>' + (feature.properties['objid'] !== null ? autolinker.link(feature.properties['objid'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+		<tr>\
+			<th scope="row">Name: </th>\
+			<td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
+		</tr>\
+		<tr>\
+			<th scope="row">Typ: </th>\
+			<td>' + (feature.properties['objart_txt'] !== null ? autolinker.link(touristPOI[feature.properties['objart_txt'].toLocaleString()]) : '') + '</td>\
+		</tr>'
+	if (feature.properties['fkt']) {
+			popupContent = popupContent + '<tr>\
+				<th scope="row">Funktion: </th>\
+				<td>' + (feature.properties['fkt'] !== null ? autolinker.link(touristArt[feature.properties['fkt'].toLocaleString()]) : '') + '</td>\
+			</tr>';
+		}
+	popupContent = popupContent + '</table>';
+
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
 
 // When a gemeinde is chosen
 function chooseGemeinde(e) {
@@ -465,7 +526,7 @@ function createLayers(layer) {
                     feature['feature']['properties']['HANDL'] = 'a';
                     feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
                     // Add attributes for change
-                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
+                    var attribute = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT', 'BAUART', 'BAUZUS', 'TRAGF', 'UHPFL', 'FKT_LW', 'FKT_FW', 'FKT_TFE', 'FKT_WA', 'FKT_RE', 'FKT_RA', 'FKT_DM', 'FKT_SE', 'FKT_PEE', 'FKT_OEWw', 'FKT_OEWS', 'DKBREIT', 'DFBREIT', 'KBREIT', 'DATUM'];
                     for (var i in attribute) {
                         var att = attribute[i];
                         if (att in feature.feature.properties) {
@@ -927,6 +988,136 @@ var fktValues = {
     "5211": "Hauptwirtschaftsweg",
     "5212": "Wirtschaftsweg"
 }
+//
+// VALUES DICTIONARIES
+//
+
+// Dictionary of Bauart Values
+var BAUARTValues = {
+    "": " - ",
+    "a": 'befestigt',
+    "b": "teilbefestigt",
+    "c": "wassergebunden",
+    "d": "ohne Befestigung",
+    "e": "Kreuzungsbauwerk"
+}
+
+// Dictionary of Bauzustand Values
+var BAUZUSValues = {
+    "": " - ",
+    "a": 'in Ordnung',
+    "b": "Einzelmaßnahmen erforderlich",
+    "c": "Gesamtsanierung erforderlich"
+}
+
+// Dictionary of Tragfähigkeit Values
+var TRAGFValues = {
+    "": " - ",
+    "a": 'hoch',
+    "b": "mittel",
+    "c": "gering"
+}
+
+// Dictionary of Unterhaltungspflicht Values
+var UHPFLValues = {
+    "": " - ",
+    "Gemeinde": "Gemeinde",
+    "Kreis": "Kreis",
+    "Land": "Land",
+    "Bundesrepublik Deutschland": "Bundesrepublik Deutschland",
+    "Natürliche Personen des Privatrechts": "Natürliche Personen des Privatrechts",
+    "Juristichen Personen des Privatrechts": "Juristichen Personen des Privatrechts",
+    "Sonstige": "Sonstige",
+    "OFFEN": "ungeklärt"
+}
+
+// Dictionary of Nutzungshäufigkeit Landwirtschaft Values
+var FKT_LWValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Forstwirtschaft Values
+var FKT_FWValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Touristmus, Erholung, Freizeit Values
+var FKT_TFEValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Wandernutzung
+var FKT_WAValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Reiter
+var FKT_REValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Radfahrer
+var FKT_RAValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Darseinsvorsorge und Mobilität
+var FKT_DMValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit siedlungsstrukturelle Entwicklungen
+var FKT_SEValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Nutzungshäufigkeit Produktion erneuerbarer Energien
+var FKT_PEEValues = {
+    "": " - ",
+    "0": "nie / selten",
+    "1": "gelegentlich / saisonal",
+    "2": "häufig"
+}
+
+// Dictionary of Funktion ökologische Wertigkeit Wege, Verkersflächen
+var FKT_OEWWValues = {
+    "": " - ",
+    "0": "nicht vorhanden",
+    "1": "vorhanden",
+    "2": "stark ausgeprägt"
+}
+
+// Dictionary of Funktion ökologische Wertigkeit Säume
+var FKT_OEWSValues = {
+    "": " - ",
+    "0": "nicht vorhanden",
+    "1": "vorhanden",
+    "2": "stark ausgeprägt"
+}
 
 // FUNCTIONS
 // Function to show Popup in the categorized data
@@ -1014,6 +1205,7 @@ function blockOthers(e) {
 // Function to show attributes in the table when a Weg is clicked
 function editAttribute () {
     var feature = wegSelected;
+    console.log(feature);
     if (feature['feature']['properties']['grundLayer']) {
         sidebar.open("edit-grund");
     } else {
@@ -1162,7 +1354,7 @@ function confirmEdit () {
     var feature = wegSelected;
     // Select all table tags
     var entries = document.querySelectorAll("td");
-    var attribute = ['HANDL-ist', 'PRIO-ist', 'ZUHPFL-ist', 'ZWEGKAT-ist', 'WEGKAT-ist'];
+    //var attribute = ['HANDL-ist', 'PRIO-ist', 'ZUHPFL-ist', 'ZWEGKAT-ist', 'WEGKAT-ist'];
     // Loop
     for (var i in entries) {
         var row = entries[i];
@@ -1184,7 +1376,8 @@ function confirmEdit () {
         }
     }
     // Style that something changed
-    var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
+    //var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT'];
+    var attributen = ['HANDL', 'PRIO', 'ZUHPFL', 'ZWEGKAT', 'WEGKAT', 'BAUART', 'BAUZUS', 'TRAGF', 'UHPFL', 'FKT_LW', 'FKT_FW', 'FKT_TFE', 'FKT_WA', 'FKT_RE', 'FKT_RA', 'FKT_DM', 'FKT_SE', 'FKT_PEE', 'FKT_OEWw', 'FKT_OEWS'];
     var attsChanged = 0;
     for (var i in attributen) {
         var att = attributen[i];
@@ -1215,7 +1408,6 @@ function confirmEdit () {
     feature.setStyle({
         color: wegeStyles[feature['feature']['properties']['ZWEGKAT']]
     });
-    console.log(feature);
 };
 
 // Show and hide features (used for the gemeinde and highlight layers)
@@ -1237,7 +1429,6 @@ map.on('click', function(e) {
     // Hide Sidebar
     sidebar.close();
 })
-
 
 
 
