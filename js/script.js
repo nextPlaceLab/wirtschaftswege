@@ -797,6 +797,7 @@ $('#test-grund').click(function() {
     });
 
     // Activate Categorize/Edit Panel
+    sidebar.close();
     document.getElementById("start-tab").className = "disabled";
     document.getElementById("grund-tab").className = "";
     document.getElementById("request-tab").className = "";
@@ -1055,6 +1056,15 @@ function addGeojson(layer) {
     highlightLayer.clearLayers();
     // Add features to highlight layer
     highlightLayer.addData(geoJson);
+    // Add highlight layer to legende
+    /*
+    panelControl.addOverlay({
+        active: true,
+        layer: highlightLayer,
+        icon: '<i class="icon icon-gesnetz"></i>',
+        },
+        'Änderungen');
+    */
     // Clear layer
     createLayers(layer);
     map.fitBounds(highlightLayer.getBounds());
@@ -1062,6 +1072,7 @@ function addGeojson(layer) {
     addKatMarkers();
     map.fireEvent('dataload');
     // Disable Edit-grund & enable Edit-Kat
+    sidebar.close();
     document.getElementById("grund-tab").className = "disabled";
     document.getElementById("request-tab").className = "disabled";
     document.getElementById("kat-tab").className = "";
