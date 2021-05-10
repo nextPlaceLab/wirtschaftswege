@@ -182,6 +182,7 @@ var infoDatenLayers = [
         {
             active: false,
             name: "Gesamtwegenetz",
+            icon: '<i class="icon icon-gesnetz"></i>',
             layer: Gesamtwegenetz
         },
         {
@@ -197,25 +198,13 @@ var infoDatenLayers = [
 
 // Layer Controls
 var panelControl = new L.Control.PanelLayers(baseLayers, infoDatenLayers, {
-    collapsibleGroups: false,
+    collapsibleGroups: true,
     title: 'Legende',
 });
 map.addControl(panelControl);
 
-// Spinner
-var opts = {
-    lines: 12, // The number of lines to draw
-    length: 12, // The length of each line
-    width: 7, // The line thickness
-    radius: 23, // The radius of the inner circle
-    color: '#fff', // #rgb or #rrggbb
-    speed: 1, // Rounds per second
-    trail: 60, // Afterglow percentage
-    shadow: true, // Whether to render a shadow
-    hwaccel: false // Whether to use hardware acceleration
-}
-target = document.getElementById('loading');
-spinner = new Spinner(opts).spin(target);
+// Scale
+var scale = L.control.scale({position: "bottomright"}).addTo(map); 
 
 // Loading Wheel
 var loadingControl = L.Control.loading({
@@ -223,32 +212,14 @@ var loadingControl = L.Control.loading({
 });
 map.addControl(loadingControl);
 
-// Touristische Ziele
+// Info Layers
+// Empty layers
 var tourZieleLayers = null;
-var tourParameters = {
-	service : 'WFS',
-	version : '2.0',
-	request : 'GetFeature',
-	typeName : [('swd01_p'),('swd02_p'),('swd03_p')],
-	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
-	outputFormat : 'text/javascript',
-	format_options : 'callback:getJson',
-	SrsName : 'EPSG:4326',
-	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
-	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
-};
+var markerLayers = null;
+var markerKatLayers = null;
+var lufZieleLayers = null;
 
-var tourParametersExt = L.Util.extend(tourParameters);
-var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
-
-var ajaxTour = $.ajax({
-    async: false,
-	url : tourURL,
-	dataType : 'jsonp',
-	jsonpCallback : 'getJson',
-	success : ajaxTourZiele
-});
-
+// Ajax Functions
 function ajaxTourZiele(response) {
 		
 	tourZieleLayers = L.geoJSON(response, {
@@ -265,6 +236,55 @@ function ajaxTourZiele(response) {
 	);
 }
 
+function ajaxMarker(response) {
+	markerLayers = L.geoJSON(response, {
+		onEachFeature: showPopupMarker,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: false,
+			layer: markerLayers,
+			icon: '<i class="icon icon-marker"></i>',
+		},
+		'Vorschläge',
+        'Info-Layer'
+	);
+
+}
+
+function ajaxMarkerKat(response) {
+	markerKatLayers = L.geoJSON(response, {
+		onEachFeature: showPopupMarker,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			layer: markerKatLayers,
+			icon: '<i class="icon icon-marker"></i>',
+            active: false,
+		},
+		'Vorschläge Kat',
+        'Info-Layer'
+	);
+}
+
+function ajaxLufZiele(response) {
+		
+	lufZieleLayers = L.geoJSON(response, {
+		onEachFeature: showPopupLufZiele,
+	}).addTo(map);
+	
+	panelControl.addOverlay({
+			active: true,
+			layer: lufZieleLayers,
+			icon: '<i class="icon icon-farm"></i>',
+			//collapsed: true
+		},
+		'land-/forstw. Gebäude',
+        'Info-Layer'
+	);
+}
+
+// Dictionaries
 // Dictionary for tourist poi
 var touristPOI = {
 	TF_KircheSchlossBurg: 'Kirche, Schloss, Burg',
@@ -303,6 +323,7 @@ var touristArt = {
     "": " - ",
 }
 
+// PopUp Functions
 function showPopupTourZiele(feature, layer) {
 	//layer.setIcon('<i class="fa fa-camera" aria-hidden="true"></i>');
 	layer.setIcon(L.divIcon({className: 'fa fa-camera'}));
@@ -327,9 +348,21 @@ function showPopupTourZiele(feature, layer) {
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
 
+function showPopupMarker(feature, layer) {
 
-// Farms
-var lufZieleLayers = null;
+	var popupContent = '<table border="0" rules="groups"><thead><tr><th>Gemeinde: </th><th>' + (feature.properties['gemeinde'] !== null ? autolinker.link(feature.properties['gemeinde'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+		<tr>\
+			<th scope="row">Datum: </th>\
+			<td>' + (feature.properties['timestamp'] !== null ? autolinker.link(feature.properties['timestamp'].toLocaleString()) : '') + '</td>\
+		</tr>\
+		<tr>\
+			<th scope="row">Beschreibung: </th>\
+			<td>' + (feature.properties['beschreibung'] !== null ? autolinker.link(feature.properties['beschreibung'].toLocaleString()) : '') + '</td>\
+		</tr>'
+	popupContent = popupContent + '</table>';
+
+    layer.bindPopup(popupContent, {maxHeight: 400});
+}
 
 function showPopupLufZiele(feature, layer) {
 	layer.setIcon(L.divIcon({className: 'icon icon-farm'}));
@@ -347,52 +380,32 @@ function showPopupLufZiele(feature, layer) {
 
     layer.bindPopup(popupContent, {maxHeight: 400});
 }
-/*
-// Luf Gebäude
-var lufParameters = {
+
+// Ajax Requests
+
+var tourParameters = {
 	service : 'WFS',
 	version : '2.0',
 	request : 'GetFeature',
-	typeName : 'WWA:luf_gebaeude',
+	typeName : [('swd01_p'),('swd02_p'),('swd03_p')],
 	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
 	outputFormat : 'text/javascript',
 	format_options : 'callback:getJson',
 	SrsName : 'EPSG:4326',
 	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
-	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326',
-	// CQL_FILTER: "funktion='Land- und forstwirtschaftliches Betriebsgebäude' or funktion='land- und forstwirtschaftliches Wohn- und Betriebsgebäude' and BBOX(geom,8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041) and geom=centroid(geom)",
-	
-	// "funktion" = 'Forsthaus' OR "funktion" = 'Gebäude für Land- und Forstwirtschaft' OR "funktion" = 'Land- und forstwirtschaftliches Betriebsgebäude' OR "funktion" = 'Scheune' OR "funktion" = 'Scheune und Stall'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
 };
 
-var lufParametersExt = L.Util.extend(lufParameters);
-var lufURL = owsrootUrl + L.Util.getParamString(lufParametersExt);
+var tourParametersExt = L.Util.extend(tourParameters);
+var tourURL = owsrootUrl + L.Util.getParamString(tourParametersExt);
 
-var ajaxLuf = $.ajax({
-    async: false,
-	url : lufURL,
+var ajaxTour = $.ajax({
+	url : tourURL,
 	dataType : 'jsonp',
 	jsonpCallback : 'getJson',
-	success : function (response) {
-        lufZieleLayers = L.geoJSON(response, {
-            onEachFeature: showPopupLufZiele,
-        }).addTo(map);
-        
-        panelControl.addOverlay({
-                active: false,
-                layer: lufZieleLayers,
-                icon: '<i class="icon icon-farm"></i>',
-                //collapsed: true
-            },
-            'land-/forstw. Gebäude',
-            'Info-Layer'
-        );
-    }
+	success : ajaxTourZiele
 });
-*/
 
-// Markers Grund
-var markerLayers = null;
 var markerParameters = {
 	service : 'WFS',
 	version : '2.0',
@@ -409,46 +422,60 @@ var markerParametersExt = L.Util.extend(markerParameters);
 var markerURL = owsrootUrl + L.Util.getParamString(markerParametersExt);
 
 var ajaxMarkers = $.ajax({
-    async: false,
 	url : markerURL,
 	dataType : 'jsonp',
 	jsonpCallback : 'getJson',
 	success : ajaxMarker
 });
 
-function ajaxMarker(response) {
-	markerLayers = L.geoJSON(response, {
-		onEachFeature: showPopupMarker,
-	}).addTo(map);
+var lufParameters = {
+	service : 'WFS',
+	version : '2.0',
+	request : 'GetFeature',
+	typeName : 'WWA:luf_gebaeude',
+	//PropertyName: 'objid,fkt,nam,wdm,art,zus',
+	outputFormat : 'text/javascript',
+	//format_options : 'callback:getJson',
+	SrsName : 'EPSG:4326',
+	//bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+	bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326',
+	// CQL_FILTER: "funktion='Land- und forstwirtschaftliches Betriebsgebäude' or funktion='land- und forstwirtschaftliches Wohn- und Betriebsgebäude' and BBOX(geom,8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041) and geom=centroid(geom)",
 	
-	panelControl.addOverlay({
-			active: false,
-			layer: markerLayers,
-			icon: '<i class="icon icon-marker"></i>',
-		},
-		'Vorschläge',
-        'Info-Layer'
-	);
-}
+	// "funktion" = 'Forsthaus' OR "funktion" = 'Gebäude für Land- und Forstwirtschaft' OR "funktion" = 'Land- und forstwirtschaftliches Betriebsgebäude' OR "funktion" = 'Scheune' OR "funktion" = 'Scheune und Stall'
+};
 
-function showPopupMarker(feature, layer) {
+var lufParametersExt = L.Util.extend(lufParameters);
+var lufURL = owsrootUrl + L.Util.getParamString(lufParametersExt);
 
-	var popupContent = '<table border="0" rules="groups"><thead><tr><th>Gemeinde: </th><th>' + (feature.properties['gemeinde'] !== null ? autolinker.link(feature.properties['gemeinde'].toLocaleString()) : '') + '</th></tr></thead><tr>\
-		<tr>\
-			<th scope="row">Datum: </th>\
-			<td>' + (feature.properties['timestamp'] !== null ? autolinker.link(feature.properties['timestamp'].toLocaleString()) : '') + '</td>\
-		</tr>\
-		<tr>\
-			<th scope="row">Beschreibung: </th>\
-			<td>' + (feature.properties['beschreibung'] !== null ? autolinker.link(feature.properties['beschreibung'].toLocaleString()) : '') + '</td>\
-		</tr>'
-	popupContent = popupContent + '</table>';
+var request = new XMLHttpRequest();
+request.open('GET', lufURL, true);
 
-    layer.bindPopup(popupContent, {maxHeight: 400});
+var req = new XMLHttpRequest();
+req.overrideMimeType("application/json");
+req.open('GET', lufURL, true);
+req.onload  = function() {
+    var response = req.responseText;
+    var data = response.substring(14, response.length-1);
+    var jsonResponse = JSON.parse(data);
+    ajaxLufZiele(jsonResponse);
+    // do something with jsonResponse
+};
+req.send(null);
+
+// When a gemeinde is chosen
+function chooseGemeinde(e) {
+    //selektion.features = [];
+    gemeindeLayer.eachLayer(function(feat) {
+        if (feat.feature.properties.name == e.value) {
+            var bounds = feat.getBounds();
+            // Calculate bounding box 
+            getBbox(bounds);
+            map.fitBounds(bounds);
+        } 
+    })
 }
 
 // Markers Kat
-markerKatLayers = null;
 function addKatMarkers() {
     var markerParameters = {
         service : 'WFS',
@@ -472,34 +499,6 @@ function addKatMarkers() {
         jsonpCallback : 'getJson',
         success : ajaxMarkerKat
     });
-}
-
-function ajaxMarkerKat(response) {
-	markerKatLayers = L.geoJSON(response, {
-		onEachFeature: showPopupMarker,
-	}).addTo(map);
-	
-	panelControl.addOverlay({
-			active: false,
-			layer: markerKatLayers,
-			icon: '<i class="icon icon-marker"></i>',
-		},
-		'Vorschläge Kat',
-        'Info-Layer'
-	);
-}
-
-// When a gemeinde is chosen
-function chooseGemeinde(e) {
-    //selektion.features = [];
-    gemeindeLayer.eachLayer(function(feat) {
-        if (feat.feature.properties.name == e.value) {
-            var bounds = feat.getBounds();
-            // Calculate bounding box 
-            getBbox(bounds);
-            map.fitBounds(bounds);
-        } 
-    })
 }
 
 // Load test data categorized
@@ -796,6 +795,12 @@ $('#test-grund').click(function() {
             createLayers(layer);
         }
     });
+
+    // Activate Categorize/Edit Panel
+    document.getElementById("start-tab").className = "disabled";
+    document.getElementById("grund-tab").className = "";
+    document.getElementById("request-tab").className = "";
+
 })
 
 // FUNCTIONS
@@ -858,21 +863,20 @@ var requestUrl = 'https://wps.livinglab-essigfabrik.online/wps?service=WPS&amp;v
 // Layer Styles
 var wegeStyles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
 var grundStyles = {
-    'Klassifizierte Straße': '#C00000',
-    'Kein Attribut': '#ED7D31',
-    'Hauptwirtschaftsweg': '#00FFFF',
-    'Wirtschaftsweg': '#FFFF00',
-    'Fußweg': '#FF33CC',
-    'Reitweg': '#7030A0',
-    'Rad- und Fußweg': '#00FF99',
-    'Radweg': '#006666'
+    'Klassifizierte Straße': '#007ea7',
+    'Kein Attribut': '#a7ffe4',
+    'Hauptwirtschaftsweg': '#80ced7',
+    'Wirtschaftsweg': '#e6e6cb',
+    'Fußweg': '#f5e4d7',
+    'Reitweg': '#8b9ad7',
+    'Rad- und Fußweg': '#e4e4e4',
+    'Radweg': '#d7cbe6'
 }
 
 // TRIGGER
 // When button is clicked, categorize streets
 $('#recalculate').click(function() {
-    spinner.spin();
-    map.spin(true);
+    map.fireEvent('dataloading');
     // Save layer as geojson
     json = {
 		"type": "FeatureCollection",
@@ -1056,7 +1060,14 @@ function addGeojson(layer) {
     map.fitBounds(highlightLayer.getBounds());
     // Add markers kat
     addKatMarkers();
-    map.spin(false);
+    map.fireEvent('dataload');
+    // Disable Edit-grund & enable Edit-Kat
+    document.getElementById("grund-tab").className = "disabled";
+    document.getElementById("request-tab").className = "disabled";
+    document.getElementById("kat-tab").className = "";
+    document.getElementById("compare-tab").className = "";
+    document.getElementById("download-tab").className = "";
+
 }
 
 /// 
@@ -1264,18 +1275,9 @@ var FKT_OEWSValues = {
 // FUNCTIONS
 // Function to show Popup in the categorized data
 var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-function showPopupEdit(feature, layer) {
-    layer.on({
-        click: function() {
-            wegSelected = layer;
-            var sidebarStatus = document.getElementById("sidebar").className;
-            if (sidebarStatus == 'sidebar sidebar-left leaflet-touch') {
-                editAttribute();
-            }
-        }
-    });
-    
-    var popupContent = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
+
+function updatePopupKat(feature) {
+    var popupContentKat = '<table border="0" rules="groups"><thead><tr><th>Wegenummer: </th><th>' + (feature.properties['sts'] !== null ? autolinker.link(feature.properties['sts'].toLocaleString()) : '') + '</th></tr></thead><tr>\
         <tr>\
             <th scope="row">Straßenname: </th>\
             <td>' + (feature.properties['nam'] !== null ? autolinker.link(feature.properties['nam'].toLocaleString()) : '') + '</td>\
@@ -1294,12 +1296,30 @@ function showPopupEdit(feature, layer) {
         </tr>\
         <tr>\
             <th scope="row">Handlungsempfehlung: </th>\
-            <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(feature.properties['HANDL'].toLocaleString()) : '') + '</td>\
+            <td>' + (feature.properties['HANDL'] !== null ? autolinker.link(HANDLValues[feature.properties['HANDL']].toLocaleString()) : '') + '</td>\
         </tr>\
     </table>\
     <br>\
     <button class="btn btn-outline-primary btn-sm" id="edit-attribute" onclick="editAttribute()">Editieren</button>';
-    layer.bindPopup(popupContent, {maxHeight: 400});
+    return popupContentKat;
+}
+
+function showPopupEdit(feature, layer) {
+
+    layer.bindPopup(updatePopupKat(feature), {maxHeight: 400});
+
+    layer.on({
+        click: function() {
+
+            wegSelected = layer;
+            var sidebarStatus = document.getElementById("sidebar").className;
+            if (sidebarStatus == 'sidebar sidebar-left leaflet-touch') {
+                editAttribute();
+            }
+            layer._popup.setContent(updatePopupKat(feature));
+        }
+    });
+
 }
 
 // Function to show Popup in the grund data
@@ -1600,6 +1620,11 @@ function confirmEdit () {
     feature.setStyle({
         color: wegeStyles[feature['feature']['properties']['ZWEGKAT']]
     });
+
+    // Update Popup
+    feature.closePopup();
+    feature._popup.setContent(updatePopupKat(feature.feature));
+    feature.openPopup();
 };
 
 // Show and hide features (used for the gemeinde and highlight layers)

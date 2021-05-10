@@ -43,6 +43,10 @@
 	background: url('../js/images/line-icon-gemgrenz.png') center center no-repeat;
 }
 
+.icon-gesnetz {
+	background: url('../js/images/line-icon-gesnetz.png') center center no-repeat;
+}
+
 .icon-marker {
 	background: url('../js/images/marker-icon-blue-small.png') center center no-repeat;
 }

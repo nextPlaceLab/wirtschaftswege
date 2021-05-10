@@ -56,12 +56,13 @@
         <!-- Nav tabs -->
         <div class="sidebar-tabs">
             <ul role="tablist">
-                <li><a href="#start" role="tab"><i class="fas fa-play"></i></a></li>
-                <li><a href="#categorize" role="tab"><i class="fas fa-filter"></i></a></li>
-                <li><a href="#edit-grund" role="tab"><i class="fas fa-pen"></i></a></li>
-                <li><a href="#edit-soll" role="tab"><i class="fas fa-pen"></i></a></li>
-                <li><a href="#compare" role="tab"><i class="fas fa-chart-bar"></i></a></li>
-                <li><a href="#download" role="tab"><i class="fas fa-download"></i></a></li>
+                <li id="start-tab"><a href="#start" role="tab"><i class="fas fa-play"></i></a></li>
+                <li id="grund-tab" class="disabled"><a href="#edit-grund" role="tab"><i class="fas fa-pen"></i></a></li>
+                <li id="request-tab" class="disabled"><a href="#categorize" role="tab"><i class="fas fa-filter"></i></a></li>
+                <li id="kat-tab" class="disabled"><a href="#edit-soll" role="tab"><i class="fas fa-pen"></i></a></li>
+                <li id="compare-tab" class="disabled"><a href="#compare" role="tab"><i class="fas fa-chart-bar"></i></a></li>
+                <li id="download-tab" class="disabled"><a href="#download" role="tab"><i class="fas fa-download"></i></a></li>
+                <li><a href="#print" role="tab"><i class="fas fa-print"></i></i></a></li>
             </ul>
 
             <ul role="tablist">
@@ -78,6 +79,7 @@
                     <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 <br>
+                <p>Wählen Sie eine Gemeinde, um zu starten.</p>
                 <select id="gemeinde" onchange="chooseGemeinde(this)">
                     <option disabled selected value>Wählen Sie eine Gemeinde</option>
                     <option value="Barntrup">Barntrup</option>
@@ -96,6 +98,7 @@
             <div class="sidebar-pane" id="categorize">
                 <h1 class="sidebar-header">Kategorisierung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 <br>
+                <p>Um die Wege zu kategorisieren, klicken Sie:</p>
                 <button class="btn btn-outline-primary btn-sm" id="recalculate">Wegen Kategorisieren</button>
                 <br>
                 <br>
@@ -106,6 +109,7 @@
             <div class="sidebar-pane" id="edit-grund">
                 <h1 class="sidebar-header">Grunddatenanpassung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 <br>
+                <p>Klicken Sie auf einem Weg, um seine Attribute zu anpassen.</p>
                 <table id="attributes-ist" class="table table-sm">
                     <thead>
                         <tr>
@@ -171,6 +175,7 @@
             <div class="sidebar-pane" id="edit-soll">
                 <h1 class="sidebar-header">Konzepterarbeitung<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 <br>
+                <p>Klicken Sie auf einem Weg, um seine Attribute zu anpassen.</p>
                 <h6>Wegekategorien</h6>
                 <table id="attributes-soll" class="table table-sm">
                     <thead>
@@ -197,7 +202,7 @@
                             </select></td>
                     </tr>
                     <tr>
-                        <td>Zukünftige Kategorie:</td>
+                        <td>Zukünftige Kategorie (dargestellt):</td>
                         <td id="ZWEGKAT-ist"></td>
                         <td><select id="ZWEGKAT">
                                 <option value=""> - </option>
@@ -456,7 +461,16 @@
             <div class="sidebar-pane" id="download">
                 <h1 class="sidebar-header">Herunterladen<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
                 <br>
+                <p>Um die Wege in GeoJSON Format zu herunterladen, klicken Sie:</p>
                 <button class="btn btn-outline-primary btn-sm" id="download">Download</button>
+                
+            </div>
+
+            <div class="sidebar-pane" id="print">
+                <h1 class="sidebar-header">Drucken<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <br>
+                <p>Um die karte Ansicht zu drucken, klicken Sie:</p>
+                <button class="btn btn-outline-primary btn-sm" id="print">Drucken</button>
                 
             </div>
 
