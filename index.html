@@ -48,6 +48,13 @@
     <script src="src/Control.Loading.js"></script>
     <script src="src/leaflet.spin.js"></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.0/chart.min.js" integrity="sha512-VMsZqo0ar06BMtg0tPsdgRADvl0kDHpTbugCBBrL55KmucH6hP9zWdLIWY//OTfMnzz6xWQRxQqsUFefwHuHyg==" crossorigin="anonymous"></script>
+    
+    <!-- BrowserPrint -->
+    <script src="dist/leaflet.browser.print.min.js"></script>
+
+
 </head>
 
 <body>
@@ -451,6 +458,24 @@
 
             <div class="sidebar-pane" id="compare">
                 <h1 class="sidebar-header">Vergleichen<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <input id="chartButton" type="button" value="Chart"/>
+					  <select name="chartTypes" id="chartTypes">
+						<option value="bar">Bar</option>
+						<option value="stacked">Stacked bar</option>
+						<option value="doughnut">Doughnut</option>
+						<option value="pie">Pie</option>
+						<option value="line">Line</option>
+						<option value="radar">Radar</option>
+					  </select>
+					  <select name="whichCol" id="whichCol">
+						<option value="proz">Prozentual</option>
+						<option value="abs">Absolut</option>
+					  </select>
+					<div><canvas id="chart" width="400" height="400"></canvas></div>
+					<div id="tableDiv">
+						<table id="tableChart"></table>
+					</div>
+
             </div>
 
             <div class="sidebar-pane" id="download">

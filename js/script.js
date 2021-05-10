@@ -21,6 +21,8 @@ proj4.defs([
     ]
 ]);
 
+
+
 // Global Variables
 var status = 'status'; // status of request
 var progress = '0'; // progress of request
@@ -665,7 +667,7 @@ function createLayers(layer) {
     if (layer == 'wege') {
         for (group of wegeKategorien) {
             for (kat of group['layers']) {
-                wegeLayers[kat] = L.Proj.geoJson(geoJson, {
+                wegeLayers[kat.value] = L.Proj.geoJson(geoJson, {
                     filter: function(feature, layer) {
                         return feature.properties[kat['property']] == kat['value'];
                     },
@@ -676,7 +678,7 @@ function createLayers(layer) {
                         opacity: 1,
                     }
                 }).addTo(map);
-                wegeLayers[kat].eachLayer(function(feature) {
+                wegeLayers[kat.value].eachLayer(function(feature) {
                     // Copy WEGKAT to ZWEGKAT
                     feature['feature']['properties']['ZWEGKAT'] = feature['feature']['properties']['WEGKAT'];
                     // Add attributes for change
@@ -704,13 +706,13 @@ function createLayers(layer) {
                 });
                 panelControl.addOverlay({
                     active: true,
-                    layer: wegeLayers[kat],
+                    layer: wegeLayers[kat.value],
                     icon: kat['icon']
                 },
                 kat['name'],
                 group['group']
                 );
-                katWege.push(wegeLayers[kat]);
+                katWege.push(wegeLayers[kat.value]);
             }
         }
     } else {
@@ -1621,6 +1623,297 @@ map.on('click', function(e) {
     // Hide Sidebar
     sidebar.close();
 })
+
+
+
+
+
+
+
+//var styles = {'a': '#d8000a', 'b': '#03bebe', 'c': '#ffb41d', 'd': '#447f32', 'e': '#153dcf', 'f': '#f343eb', 'g': '#70e034', 'h': '#e6ff01', 'i': '#868C30'};
+
+//// Teil für Charts
+
+function featuresFromLayers() {
+	features = [];
+	for (group of wegeKategorien) {
+		for (kat of group.layers) {
+			features = features.concat(wegeLayers[kat.value].toGeoJSON().features);
+		}
+	}
+	return features;
+}
+
+function propsFromFeatures(features) {
+	(arr = []).length = kategorien.length;
+	arr.fill(0);
+	data = {
+		labels: kategorien,
+		laenge_ges: 0,
+		laenge_kat_ist: [...arr],
+		zlaenge_kat_ist: [...arr],
+	}
+
+	for (feature of features) {
+		laenge = feature.properties.LAENGE;
+		
+		data.laenge_ges = data.laenge_ges + laenge;
+		if (feature.properties['WEGKAT'] === null) {
+			data.laenge_kat_ist[kategorien.indexOf('unklassifiziert')] = data.laenge_kat_ist[kategorien.indexOf('unklassifiziert')] + laenge;
+		} else {
+			data.laenge_kat_ist[kategorien.indexOf(feature.properties['WEGKAT'])] = data.laenge_kat_ist[kategorien.indexOf(feature.properties['WEGKAT'])] + laenge;
+		}
+		if (feature.properties['ZWEGKAT'] === null) {
+			data.zlaenge_kat_ist[kategorien.indexOf('unklassifiziert')] = data.zlaenge_kat_ist[kategorien.indexOf('unklassifiziert')] + laenge;
+		} else {	
+			data.zlaenge_kat_ist[kategorien.indexOf(feature.properties['ZWEGKAT'])] = data.zlaenge_kat_ist[kategorien.indexOf(feature.properties['ZWEGKAT'])] + laenge;			
+		}
+	}
+	
+	data.proz_kat_ist = [...data.laenge_kat_ist];
+	data.zproz_kat_ist = [...data.zlaenge_kat_ist];
+
+	for (idx in kategorien) {
+		data.proz_kat_ist[idx] = data.proz_kat_ist[idx] / data.laenge_ges * 100;
+		data.zproz_kat_ist[idx] = data.zproz_kat_ist[idx] / data.laenge_ges * 100;
+	}
+
+	return data;
+}
+
+function generateTableHead(table, data) {
+    let thead = table.createTHead();
+    let row = thead.insertRow();
+    let row2 = thead.insertRow();
+    for (let key of Object.keys(data)) {
+		
+        let th = document.createElement("th");
+        let text = document.createTextNode(key);
+        th.appendChild(text);
+
+		if (key == 'Name') {
+			th.rowSpan = 2;
+		} else {
+			th.colSpan = 2;	
+			th.style.textAlign = "center";			
+		}
+
+        row.appendChild(th);
+
+
+		if (typeof(data[key]) == typeof([])) {
+			for (let key2 of Object.keys(data[key])) {
+				
+				let th2 = document.createElement("th");
+				let text = document.createTextNode(key2);
+				th2.appendChild(text);
+				row2.appendChild(th2);
+			}
+
+		}
+    }
+}
+
+function generateTable(table, data) {
+    for (let element of data) {
+        let row = table.insertRow();
+
+        for (key in element) {
+
+			if (typeof(element[key]) == typeof([])) {
+				for (key2 in element[key]) {
+					let cell = row.insertCell();
+					cell.style.textAlign = "center";			
+
+					let text = document.createTextNode(element[key][key2]);
+					cell.appendChild(text);
+				}
+			} else {
+				let cell = row.insertCell();
+				let text = document.createTextNode(element[key]);
+				cell.appendChild(text);
+			}
+        }
+    }
+}
+
+// geordnetes Array, dictionaries sind leider ungeordnet und Kat. i
+// wird hinter Kat. h geordnet.
+var kategorien = ['a','b','c','d','i','e','f','g','h','unklassifiziert'];
+
+var chartBackgroundColor = [];
+
+for (kat of kategorien) {
+	chartBackgroundColor.push(wegeStyles[kat]);
+}	
+chartBackgroundColor.push('#333333');
+
+var chartBorderColor = chartBackgroundColor;
+
+var chart = null;
+var table = null;
+var plotData = function () {
+	if (chart) {
+		table.innerHTML='';
+		chart.destroy();
+	}
+
+	features = featuresFromLayers();
+	data = propsFromFeatures(features);
+
+	let chartType = document.getElementById('chartTypes').value;
+	let whichCol = document.getElementById('whichCol').value;
+	
+	if (whichCol == 'proz') {
+		dataset = data.proz_kat_ist
+		zdataset = data.zproz_kat_ist
+	} else {
+		dataset = data.laenge_kat_ist;
+		zdataset = data.zlaenge_kat_ist;		
+	}
+	
+	let title = 'Vergleich Wegekategorie - zukünftige Wegekategorie'
+	
+	if (chartType == 'stacked') {
+		let datasets = {
+		    labels: ['Wegekategorie','zukünftige Wegekategorie'],
+		    datasets: []
+		};
+		
+		for (i in data.labels) {
+			ds = {}
+			ds.label = data.labels[i];
+			ds.data = [dataset[i],zdataset[i]];
+			ds.backgroundColor = chartBackgroundColor[i];
+			//ds.borderColor = chartBorderColor[i];
+			
+			datasets.datasets = datasets.datasets.concat(ds);
+		}
+		
+	    var chartConfig = {
+	        type: 'bar',
+	        data: datasets,
+	        options: {
+	            indexAxis: 'y',
+	            plugins: {
+	                title: {
+	                    display: true,
+	                    text: title
+	                },
+	            },
+	            responsive: true,
+	            scales: {
+	                x: {
+	                    stacked: true,
+	                },
+	                y: {
+	                    stacked: true
+	                }
+	            }
+	        }
+	    };
+		
+		if (whichCol == 'proz') {
+			chartConfig.options.scales.x.max = 100;
+		}
+		
+	} else {
+		let datasets = {
+			labels: data.labels,
+			datasets: [{
+					label: 'Wegekategorie',
+					data: dataset,
+					backgroundColor: chartBackgroundColor[0],
+					borderColor: chartBorderColor[0],
+					borderWidth: 1
+				},
+				{
+					label: 'zukünftige Wegekategorie',
+					data: zdataset,
+					backgroundColor: chartBackgroundColor[1],
+					borderColor: chartBorderColor[1],
+					borderWidth: 1
+				}
+			]
+		};
+		if (chartType == 'doughnut' || chartType == 'pie') {
+			datasets.datasets[0].backgroundColor = chartBackgroundColor;
+			datasets.datasets[0].borderColor = chartBorderColor;
+			datasets.datasets[1].backgroundColor = chartBackgroundColor;
+			datasets.datasets[1].borderColor = chartBorderColor;
+			
+			title = 'Vergleich Wegekategorie (äußerer Ring) - zukünftige Wegekategorie (innerer Ring)'
+		}
+		
+		var chartConfig = {
+		    type: chartType,
+		    data: datasets,
+		    options: {
+	            plugins: {
+	                title: {
+	                    display: true,
+	                    text: title
+	                },
+	            },
+		    },
+		};
+		
+		if (chartType != 'doughnut'&& chartType != 'pie' && chartType != 'radar') {
+			chartConfig.options.scales = {
+				y: {
+					beginAtZero: true
+				}
+			};
+		}
+	}
+
+	let chartCanvas = document.getElementById('chart').getContext('2d'); // 
+	
+	chart = new Chart(
+		chartCanvas,
+		chartConfig
+	);
+	
+	// Tabelle
+	let tableData = [
+		{
+			'Name': 'Wegekategorie',
+			'Kernwegenetz (A,B,C,D,I)': {
+				'[km]': (data.laenge_kat_ist.slice(0, 5).reduce(function(a, b){return a + b;}, 0)/1000).toFixed(2),
+				'[%]': data.proz_kat_ist.slice(0, 5).reduce(function(a, b){return a + b;}, 0).toFixed(2),
+			},
+			'untergeordnetes Wegenetz (E,F,G,H)': {
+				'[km]': (data.laenge_kat_ist.slice(5, 9).reduce(function(a, b){return a + b;}, 0)/1000).toFixed(2),
+				'[%]': data.proz_kat_ist.slice(5, 9).reduce(function(a, b){return a + b;}, 0).toFixed(2),
+			}
+		},
+		{
+			'Name': 'zukünftige Wegekategorie',
+			'Kernwegenetz (A,B,C,D,I)': {
+				'[km]': (data.zlaenge_kat_ist.slice(0, 5).reduce(function(a, b){return a + b;}, 0)/1000).toFixed(2),
+				'[%]': data.zproz_kat_ist.slice(0, 5).reduce(function(a, b){return a + b;}, 0).toFixed(2),
+			},
+			'untergeordnetes Wegenetz (E,F,G,H)': {
+				'[km]': (data.zlaenge_kat_ist.slice(5, 9).reduce(function(a, b){return a + b;}, 0)/1000).toFixed(2),
+				'[%]': data.zproz_kat_ist.slice(5, 9).reduce(function(a, b){return a + b;}, 0).toFixed(2),
+			}
+		}
+	]
+	
+	table = document.getElementById("tableChart");
+	generateTableHead(table, tableData[0]);
+	generateTable(table, tableData);
+}
+
+var chartBtn = document.getElementById('chartButton');
+L.DomEvent.on(chartBtn, 'click', plotData);
+
+
+
+/// Print
+
+L.control.browserPrint().addTo(map);
+
 
 
 
