@@ -1753,6 +1753,10 @@ var chartBorderColor = chartBackgroundColor;
 var chart = null;
 var table = null;
 var plotData = function () {
+    if (Object.keys(wegeLayers).length === 0) {
+		return;
+	}
+
 	if (chart) {
 		table.innerHTML='';
 		chart.destroy();
