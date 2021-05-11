@@ -21,8 +21,6 @@ proj4.defs([
     ]
 ]);
 
-
-
 // Global Variables
 var status = 'status'; // status of request
 var progress = '0'; // progress of request
@@ -408,6 +406,7 @@ var ajaxTour = $.ajax({
 	success : ajaxTourZiele
 });
 
+/*
 var markerParameters = {
 	service : 'WFS',
 	version : '2.0',
@@ -429,7 +428,7 @@ var ajaxMarkers = $.ajax({
 	jsonpCallback : 'getJson',
 	success : ajaxMarker
 });
-
+*/
 var lufParameters = {
 	service : 'WFS',
 	version : '2.0',
@@ -477,6 +476,34 @@ function chooseGemeinde(e) {
     })
 }
 
+// Markers Grund
+function addGrundMarkers() {
+    var markerParameters = {
+        service : 'WFS',
+        version : '2.0',
+        request : 'GetFeature',
+        typeName : 'WWA:marker_crowd_sourcing',
+        outputFormat : 'text/javascript',
+        format_options : 'callback:getJsonMarker',
+        SrsName : 'EPSG:4326',
+        //bbox: map.getBounds().toBBoxString()+',EPSG:4326'
+        bbox: '8.6401953530565052,51.9211967806497228,9.1981613107454372,52.1944330584483041,EPSG:4326'
+    };
+    
+    var markerParametersExt = L.Util.extend(markerParameters);
+    var markerURL = owsrootUrl + L.Util.getParamString(markerParametersExt);
+    
+    var ajax = $.ajax({
+        async: false,
+        url : markerURL,
+        dataType : 'jsonp',
+        jsonpCallback : 'getJsonMarker',
+        success : ajaxMarker
+    });
+}
+
+addGrundMarkers();
+
 // Markers Kat
 function addKatMarkers() {
     var markerParameters = {
@@ -502,6 +529,23 @@ function addKatMarkers() {
         success : ajaxMarkerKat
     });
 }
+
+// Synchronize markers
+$('#synchronize').click(function() {
+    var start = document.getElementById("start-tab").className;
+    var grund = document.getElementById("grund-tab").className;
+    if ((start == "") || (grund == "")) {
+        // update grund markers
+        map.removeLayer(markerLayers);
+        panelControl.removeLayer(markerLayers);
+        addGrundMarkers();
+    } else {
+        // update kat markers
+        map.removeLayer(markerKatLayers);
+        panelControl.removeLayer(markerKatLayers);
+        addKatMarkers();
+    }
+});
 
 // Load test data categorized
 $('#test').click(function() {
