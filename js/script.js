@@ -224,7 +224,7 @@ function ajaxTourZiele(response) {
 		
 	tourZieleLayers = L.geoJSON(response, {
 		onEachFeature: showPopupTourZiele,
-	}).addTo(map);
+	})//.addTo(map);
 	
 	panelControl.addOverlay({
 			active: false,
@@ -239,7 +239,7 @@ function ajaxTourZiele(response) {
 function ajaxMarker(response) {
 	markerLayers = L.geoJSON(response, {
 		onEachFeature: showPopupMarker,
-	}).addTo(map);
+	})//.addTo(map);
 	
 	panelControl.addOverlay({
 			active: false,
@@ -255,7 +255,7 @@ function ajaxMarker(response) {
 function ajaxMarkerKat(response) {
 	markerKatLayers = L.geoJSON(response, {
 		onEachFeature: showPopupMarker,
-	}).addTo(map);
+	})//.addTo(map);
 	
 	panelControl.addOverlay({
 			layer: markerKatLayers,
@@ -271,7 +271,7 @@ function ajaxLufZiele(response) {
 		
 	lufZieleLayers = L.geoJSON(response, {
 		onEachFeature: showPopupLufZiele,
-	}).addTo(map);
+	})//.addTo(map);
 	
 	panelControl.addOverlay({
 			active: true,
