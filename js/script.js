@@ -584,7 +584,7 @@ $('#test').click(function() {
 // Categorized Wege Layers
 var wegeKategorien = [
     {
-        group: "Kernwegenetz",
+        group: "Kernwegenetz SOLL",
         layers: [
             {
                 name: 'Kategorie A',
@@ -619,7 +619,7 @@ var wegeKategorien = [
         ] 
     },
     {
-        group: "untergeordnetes Wegenetz",
+        group: "untergeordnetes Wegenetz SOLL",
         layers: [
             {
                 name: 'Kategorie E',
@@ -802,7 +802,7 @@ function createLayers(layer) {
                 icon: kat['icon']
             },
             kat['name'],
-            'Wegenetz'
+            'Wegenetz Grunddaten'
             );
             grundWege.push(grundLayers[kat]);
         }
